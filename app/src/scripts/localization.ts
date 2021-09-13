@@ -1,6 +1,4 @@
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore/lite';
 import type { Locale } from '../models/JetTypes';
-import { firestore } from './jet';
 import { GEOBANNED, LOCALE, PREFERRED_LANGUAGE } from '../store';
 
 // Get user's preferred language from browser
@@ -29,41 +27,10 @@ export const getLocale = async (): Promise<void> => {
       }
     });
 
-    // Track IP's of countries that we know, count visitors
-    if (locale) {
-      const countryRef = doc(firestore, `countries/${locale.country}`);
-      if (countryRef) {
-        const countryDoc = await getDoc(countryRef);
-
-        if (countryDoc) {
-          const currentData = countryDoc.data();
-          if (currentData && !currentData.ips.includes(locale.ip)) {
-            updateDoc(countryRef, {
-              ips: [...currentData.ips, locale.ip]
-            });
-          } else if (!currentData) {
-            setDoc(countryRef, {
-              ips: [locale.ip] 
-            });
-          }
-        }
-      }
-    }
-
     // Set language and locale
     PREFERRED_LANGUAGE.set(language);
     LOCALE.set(locale ?? null);
   } catch (err) {
-    // Add to count of unknown countries
-    const countryRef = doc(firestore, `countries/unknown`);
-    const countryDoc = await getDoc(countryRef);
-    let currentData = countryDoc.data();
-    if (currentData) {
-      updateDoc(countryRef, {count: currentData.count++});
-    } else {
-      setDoc(countryRef, {count: 1});
-    }
-    
     console.log(err);
   }
 
