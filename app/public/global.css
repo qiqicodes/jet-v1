@@ -1,0 +1,576 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap');
+
+/* General styling & root variables */
+:root {
+  --black: #444444;
+  --grey: #d8dfec;
+	--white: #e4ebf5;
+	--jet-green: #53bd9f;
+	--jet-blue: #32a5d3;
+  --success: #53bd9f;
+  --failure: #ec6a69;
+
+  --input-color: rgba(26, 73, 94, 0.7);
+  --gradient: linear-gradient(135deg, var(--jet-green) 25%, var(--jet-blue) 85%);
+
+  --light-shadow: rgba(255, 255, 255, 1);
+  --dark-shadow: rgba(190, 200, 228, 1);
+  --neu-shadow: -2px -2px 4px var(--light-shadow), 2px 2px 4px var(--dark-shadow);
+  --neu-shadow-inset: inset -2px -2px 2.5px var(--light-shadow), inset 2px 2px 2.5px var(--dark-shadow);
+  --neu-shadow-inset-low: inset -1.5px -1.5px 2px var(--light-shadow), inset 1.5px 1.5px 2px var(--dark-shadow);
+  --neu--datatable-top-shadow: -2px -3px 4px var(--light-shadow), 2px 2px 4px var(--dark-shadow);
+  --neu--datatable-bottom-shadow: -2px 0px 4px var(--light-shadow), 2px 3px 4px var(--dark-shadow);
+  --neu-shadow-inset-success: inset -2px -2px 2px #65d1b2, inset 2px 2px 2px #2d8d72;
+  --neu-shadow-inset-failure: inset -2px -2px 2px #f58d8d, inset 2px 2px 2px #c94646;
+  --neu-shadow-inset-gradient: inset -2px -2px 2.5px #67cff8, inset 2px 2px 2.5px #329478;
+  --neu-shadow-inset-gradient-low: inset -1.5px -1.5px 2px #67cff8, inset 1.5px 1.5px 2px #329478;
+
+  --disabled-opacity: 0.65;
+
+  --nav-width: 60px;
+  --mobile-nav-height: 60px;
+
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 18px;
+
+  --border-radius: 20px;
+  --round-radius: 50px;
+  --btn-radius: 7px;
+  --btn-padding: 7px 20px 5px 20px;
+}
+@font-face {
+  font-family: 'Bicyclette';
+  src: url("./fonts/Bicyclette-Regular.woff") format('woff');
+}
+@font-face {
+  font-family: 'Bicyclette-Bold';
+  src: url("./fonts/Bicyclette-Bold.woff") format('woff');
+}
+@font-face {
+  font-family: 'Jet-Icons';
+  src: url("./fonts/JetIcons-Regular.woff") format('woff');
+}
+body {
+	margin: 0;
+  font-family: Helvetica Neue, Helvetica, Arial, sans-serif;
+	background: var(--white);
+	color: var(--black);
+	overflow-x: hidden;
+  letter-spacing: 0.25px;
+  width: calc(100% - var(--nav-width));
+  margin-left: var(--nav-width);
+}
+
+/* Text */
+h1, h2, p, th, td, span {
+  position: relative;
+	margin: unset;
+	text-decoration: none;
+	color: var(--black);
+  opacity: 0.9;
+  font-size: 16px;
+}
+a, i {
+  text-decoration: none;
+  margin: var(--spacing-xs);
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
+  -webkit-touch-callout: none;
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  font-style: normal;
+}
+span {
+  opacity: 0.75;
+  font-size: 15px;
+  text-align: center;
+  max-width: 475px;
+}
+sup {
+  color: var(--black);
+  opacity: var(--disabled-opacity);
+  font-size: 9px !important;
+  cursor: pointer;
+}
+*:focus-visible {
+  outline: unset;
+}
+.text-gradient {
+  opacity: 1 !important;
+  background-image: var(--gradient) !important;
+	-webkit-background-clip: text !important;
+	-webkit-text-fill-color: transparent !important;
+}
+.disabled {
+  opacity: var(--disabled-opacity);
+}
+.bicyclette {
+  font-family: 'Bicyclette', 'Roboto', sans-serif;
+}
+.jet-icons {
+  font-family: 'Jet-Icons';
+  font-size: 27px;
+}
+
+/* Flexbox */
+.flex {
+	display: flex;
+}
+.align-center {
+	align-items: center;
+}
+.align-evenly {
+	align-items: space-evenly;
+}
+.align-between {
+	align-items: space-between;
+}
+.align-start {
+  align-items: flex-start;
+}
+.align-end {
+  align-items: flex-end;
+}
+.justify-center {
+	justify-content: center;
+}
+.justify-evenly {
+	justify-content: space-evenly;
+}
+.justify-between {
+	justify-content: space-between;
+}
+.justify-start {
+  justify-content: flex-start;
+}
+.justify-end {
+  justify-content: flex-end;
+}
+.column {
+	flex-direction: column;
+}
+
+/* Inputs */
+input {
+  padding: var(--spacing-md) var(--spacing-lg);
+  margin: var(--spacing-xs) 0;
+  box-shadow: var(--neu-shadow-inset);
+  background: var(--grey);
+  color: var(--input-color);
+  border-radius: var(--btn-radius);
+  font-size: 20px;
+  border: none;
+}
+input::placeholder {
+  opacity: var(--disabled-opacity);
+}
+input:focus {
+  box-shadow: var(--neu-shadow-inset-low);
+}
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type=number] {
+  -moz-appearance: textfield;
+}
+.trade-input {
+  position: relative;
+}
+.trade-input input {
+  width: 250px;
+  border-top-right-radius: 0px;
+  border-bottom-right-radius: 0px;
+  padding-left: 50px;
+  padding-right: 80px;
+}
+.trade-input img {
+  width: 25px;
+  height: auto;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  left: var(--spacing-md);
+  opacity: var(--disabled-opacity);
+}
+.trade-input .asset-abbrev-usd {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  right: var(--spacing-md);
+  padding: unset;
+}
+.trade-input span {
+  font-weight: 400 !important;
+  font-size: 15px !important;
+  color: var(--black) !important;
+}
+.trade-input .asset-abbrev-usd span:last-of-type {
+  font-size: 10px !important;
+}
+.trade-input input:focus + img, .trade-input.active img {
+  opacity: 1;
+}
+.trade-input.active input {
+  box-shadow: var(--neu-shadow-inset-low);
+}
+.input-error {
+  border-color: var(--failure);
+}
+.input-error::placeholder {
+  color: var(--failure);
+}
+.trade-input-btn {
+  height: 43px;
+  border: 2px solid var(--white);
+  border-left: none;
+  border-top-right-radius: var(--btn-radius);
+  border-bottom-right-radius: var(--btn-radius);
+  padding: 0 var(--spacing-md);
+  cursor: pointer;
+}
+.trade-input-btn:active, .trade-input-btn.active {
+  background: var(--white);
+}
+.trade-input-btn.disabled:active {
+  background: unset;
+}
+.trade-input-btn i {
+  color: var(--white);
+}
+.trade-input-btn:active i, .trade-input-btn.active i {
+  background-image: var(--gradient) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+.trade-input-btn.disabled:active i {
+  color: var(--white);
+  -webkit-text-fill-color: unset !important;
+}
+
+/* Views */
+.view-container {
+	width: clamp(250px, 98%, 1000px);
+  margin: 0 auto;
+  padding: var(--spacing-xs);
+}
+.view-section {
+  margin: var(--spacing-md) var(--spacing-lg);
+}
+.view-title {
+  font-family: 'Bicyclette', 'Roboto'; 
+  font-size: 26px;
+  letter-spacing: 5px;
+  margin: var(--spacing-md) 0 0 0;
+}
+.view-header {
+  font-family: 'Bicyclette-Bold', 'Roboto'; 
+  font-size: 90px;
+  line-height: 105px;
+  opacity: 1;
+}
+.view-header span {
+  font-family: 'Bicyclette-Bold', 'Roboto'; 
+  font-size: 30px;
+  line-height: 35px;
+  position: absolute;
+  top: 10px;
+  opacity: 1;
+}
+.view-subheader {
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 9px;
+  opacity: 0.65;
+}
+
+/* Modals */
+.modal-bg {
+  width: calc(100% - var(--nav-width));
+  height: 100%;
+  position: fixed;
+  top: 0;
+  left: var(--nav-width);
+  background: var(--white);
+  opacity: 0.8;
+  text-align: center;
+}
+.modal {
+  position: fixed;
+  top: 50%;
+  left: calc(50% + var(--nav-width)/2);
+  transform: translate(-50%, -50%);
+  min-width: 300px;
+  max-width: 550px;
+  box-shadow: var(--neu-shadow);
+  background: var(--white);
+  border-radius: var(--border-radius);
+}
+.modal-section {
+  margin: var(--spacing-xs) 0;
+}
+.modal-detail {
+  width: 200px;
+}
+.modal-header {
+  font-family: 'Bicyclette'; 
+  font-size: 45px;
+  line-height: 50px;
+}
+.modal-subheader {
+  font-family: 'Bicyclette';
+  font-size: 38px;
+}
+.modal .close {
+  position: absolute;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  font-size: 15px;
+  font-weight: 150;
+  cursor: pointer;
+  color: var(--black);
+  opacity: var(--disabled-opacity);
+}
+.modal span {
+  font-size: 12px;
+}
+
+/* Divider */
+.divider {
+  width: 98%;
+  height: 3px;
+  margin: var(--spacing-sm) 0;
+  border-radius: var(--border-radius);
+  box-shadow: var(--neu-shadow-inset-low);
+}
+
+/* Datatable component overrides */
+.datatable, .dt-table, .dt-table th, .dt-table td, .dt-table tbody {
+  background: var(--white) !important;
+  border: unset !important;
+  border-top-left-radius: var(--border-radius) !important;
+  border-top-right-radius: var(--border-radius) !important;
+  padding: var(--spacing-sm) var(--spacing-md) !important;
+}
+.datatable {
+  box-shadow: var(--neu--datatable-top-shadow) !important;
+  padding: var(--spacing-lg) var(--spacing-sm) var(--spacing-xs) var(--spacing-sm) !important;
+}
+.dt-table {
+  padding: var(--spacing-sm) !important;
+  margin: unset !important;
+  border-top: var(--spacing-xs) solid var(--white) !important;
+}
+.dt-search {
+  margin-left: var(--spacing-sm) !important;
+  width: calc(100% - (var(--spacing-sm) * 2)) !important;
+  overflow: hidden !important;
+  border-radius: var(--border-radius) !important;
+  box-shadow: var(--neu-shadow-inset-low) !important;
+  background: var(--grey) !important;
+}
+.dt-search input {
+  margin: -1px 0 0 -5px !important;
+  line-height: 25px !important;
+  width: 100% !important;
+  padding: calc(var(--spacing-xs) * 1.25) var(--spacing-lg) var(--spacing-xs) calc(var(--spacing-lg) * 2.25) !important;
+  border: none !important;
+  color: var(--input-color) !important;
+  font-size: 13px !important;
+  box-shadow: unset !important;
+}
+.datatable th {
+  font-weight: bold !important;
+  font-size: 10px !important;
+  letter-spacing: 0.5px !important;
+  text-transform: uppercase !important;
+  border-radius: var(--border-radius) !important;
+  text-align: center !important;
+  cursor: pointer !important;
+}
+.datatable th:first-of-type {
+  text-align: left !important;
+  width: 20% !important;
+  padding-left: var(--spacing-lg) !important;
+}
+.datatable tr {
+  border-radius: var(--round-radius) !important;
+  cursor: pointer !important;
+}
+.datatable tr td:first-of-type, .datatable th:first-of-type {
+  width: 150px !important;
+  padding-left: var(--spacing-lg) !important;
+}
+.datatable tr:hover, .datatable tr.active {
+  background: var(--grey) !important;
+}
+.datatable tr.active {
+  opacity: 1 !important;
+  background: var(--grey) !important;
+  box-shadow: var(--neu-shadow-inset-low) !important;
+}
+.datatable td {
+  position: relative !important;
+  font-size: 15px !important;
+  border-radius: unset !important;
+  padding: var(--spacing-md) 0 !important;
+  background: transparent !important;
+  text-align: center !important;
+  cursor: pointer !important;
+}
+.datatable td:first-of-type {
+  border-top-left-radius: var(--round-radius) !important;
+  border-bottom-left-radius: var(--round-radius) !important;
+  text-align: left !important;
+}
+.datatable td:last-of-type {
+  border-top-right-radius: var(--round-radius) !important;
+  border-bottom-right-radius: var(--round-radius) !important;
+}
+.datatable td.reserve-detail {
+  font-size: 12px !important;
+  font-family: 'Bicyclette-Bold', 'Roboto';
+  text-transform: uppercase;
+  background-image: var(--gradient) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  padding-bottom: calc(var(--spacing-md) - 4px) !important;
+}
+.datatable-divider {
+  width: 1000% !important;
+  height: 1px !important;
+  background: var(--gradient) !important;
+  margin: var(--spacing-xs) 0 !important;
+  padding: unset !important;
+}
+.datatable .datatable-border-right {
+  border-right: 1px solid var(--grey) !important;
+}
+.datatable tr:hover .datatable-border-right, .datatable tr.active .datatable-border-right {
+  border-right: 1px solid var(--white) !important;
+}
+.datatable .search {
+  position: absolute !important;
+  top: 23px !important;
+  left: 24px !important;
+  padding-left: 1px !important;
+  font-size: 15px !important;
+  opacity: 0.8 !important;
+}
+.datatable .dt-asset span, .datatable .dt-asset img {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  left: 45px;
+}
+.datatable .dt-asset img {
+  height: 20px !important;
+  width: auto !important;
+  left: 20px !important;
+}
+.datatable-spacer td {
+  padding: calc(var(--spacing-xs) / 3) 0 !important;
+}
+.datatable tr.datatable-spacer:hover, .datatable-spacer:hover td {
+  background: var(--white) !important;
+}
+.datatable sup {
+  position: absolute !important; 
+  top: 14px !important; 
+  right: 12px !important;
+}
+.datatable tr .jet-icons {
+  opacity: 0 !important;
+  margin-right: var(--spacing-lg) !important;;
+}
+.datatable tr:hover .jet-icons {
+  opacity: 1 !important;
+}
+.datatable .faucet {
+  opacity: 0.5 !important;
+}
+.datatable .faucet:hover {
+  opacity: 1 !important;
+}
+
+/* Mobile styling */
+@media screen and (max-width: 1000px) {
+  body {
+    width: 100%;
+    height: calc((var(--vh, 1vh) * 100) - var(--mobile-nav-height));
+	  margin-left: 0;
+  }
+  .trade-input-container {
+    padding: var(--spacing-xs) 0;
+  }
+  .trade-input input {
+    width: 125px;
+  }
+  .view-container {
+    width: clamp(250px, 90%, 1000px);
+    padding-bottom: calc(var(--spacing-md) + var(--mobile-nav-height));
+  }
+  .view-section {
+    margin: var(--spacing-sm);
+  }
+  .view-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .view-title {
+    margin: var(--spacing-md) 0 0 var(--spacing-md);
+  }
+  .view-header {
+    font-size: 30px;
+    line-height: 30px;
+  }
+  .view-header span {
+    font-size: 20px;
+    line-height: 10px;
+  }
+  .modal-bg {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: calc(100% - var(--mobile-nav-height));
+  }
+  .modal {
+    position: fixed;
+    left: 50%;
+  }
+  .modal-section {
+    flex-direction: column;
+  }
+  .modal-header {
+    font-size: 30px;
+    line-height: 38px;
+  }
+  .modal-subheader {
+    font-size: 20px;
+  }
+  .modal span {
+    font-size: 10px;
+    margin: var(--spacing-sm) 0;
+  }
+  .dt-table {
+    padding: unset !important;
+  }
+  .datatable th, .datatable td.reserve-detail {
+    font-size: 10px !important;
+  }
+  .datatable td {
+    font-size: 11px !important;
+  }
+  .datatable img {
+    margin: 0 0 0 5px !important;
+  }
+  .datatable sup {
+    top: 21px !important; 
+    right: 13px !important;
+  }
+}

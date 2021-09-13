@@ -1,0 +1,790 @@
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore/lite';
+import type { Locale } from '../models/JetTypes';
+import { firestore } from './jet';
+import { GEOBANNED, LOCALE, PREFERRED_LANGUAGE } from '../store';
+
+// Get user's preferred language from browser
+// Use fallback if not
+export const getLocale = async (): Promise<void> => {
+  let locale: Locale | null;
+  let language = window.navigator.languages[1];
+  let preferredLanguage = localStorage.getItem('jetPreferredLanguage');
+  if (!Object.keys(dictionary).includes(language)) {
+    language = 'en';
+  }
+  if (preferredLanguage) {
+    language = preferredLanguage;
+  }
+
+  try {
+    const resp = await fetch('https://ipinfo.io/json?token=46ceefa5641a93', {
+      method: 'GET',
+      headers: {'Content-Type': 'application/json'}
+    });
+
+    locale = await resp.json();
+    geoBannedCountries.forEach(c => {
+      if (!locale?.country || c.code === locale?.country) {
+        GEOBANNED.set(true);
+      }
+    });
+
+    // Track IP's of countries that we know, count visitors
+    if (locale) {
+      const countryRef = doc(firestore, `countries/${locale.country}`);
+      if (countryRef) {
+        const countryDoc = await getDoc(countryRef);
+
+        if (countryDoc) {
+          const currentData = countryDoc.data();
+          if (currentData && !currentData.ips.includes(locale.ip)) {
+            updateDoc(countryRef, {
+              ips: [...currentData.ips, locale.ip]
+            });
+          } else if (!currentData) {
+            setDoc(countryRef, {
+              ips: [locale.ip] 
+            });
+          }
+        }
+      }
+    }
+
+    // Set language and locale
+    PREFERRED_LANGUAGE.set(language);
+    LOCALE.set(locale ?? null);
+  } catch (err) {
+    // Add to count of unknown countries
+    const countryRef = doc(firestore, `countries/unknown`);
+    const countryDoc = await getDoc(countryRef);
+    let currentData = countryDoc.data();
+    if (currentData) {
+      updateDoc(countryRef, {count: currentData.count++});
+    } else {
+      setDoc(countryRef, {count: 1});
+    }
+    
+    console.log(err);
+  }
+
+  return;
+};
+
+// Update language store and preference
+export const updateLanguage = (language: string): void => {
+  PREFERRED_LANGUAGE.set(language);
+  localStorage.setItem('jetPreferredLanguage', language);
+};
+
+// Banned countries
+export const geoBannedCountries = [
+  {
+    country: "Afghanistan",
+    code: "AF"
+  }, 
+  {
+    country: "Crimea (Ukraine)",
+    code: "UA"
+  }, 
+  {
+    country: "Cuba",
+    code: "CU"
+  }, 
+  {
+    country: "Democratic Republic of Congo",
+    code: "CD"
+  }, 
+  {
+    country: "Iran",
+    code: "IR"
+  }, 
+  {
+    country: "Iraq",
+    code: "IQ"
+  }, 
+  {
+    country: "Libya",
+    code: "LY"
+  }, 
+  {
+    country: "North Korea",
+    code: "KP"
+  }, 
+  {
+    country: "Sudan",
+    code: "SD"
+  }, 
+  {
+    country: "Syria",
+    code: "SY"
+  },
+  {
+    country: "Tajikistan",
+    code: "TJ"
+  },
+  {
+    country: "Venezuela",
+    code: "VE"
+  }
+];
+
+// Dictionary of UI text throughout Jet
+export const dictionary: any = {
+  // English
+  en: {
+    language: "English",
+    loading: {
+      transactions: "Sending Transactions...",
+      connectingWallet: "Connecting Wallet..."
+    },
+    nav: {
+      cockpit: "Cockpit",
+      settings: "Settings",
+      collapse: "Collapse"
+    },
+    cockpit: {
+      title: "Cockpit",
+      asset: "Asset",
+      detail: "Detail",
+      native: "Native",
+
+      totalValueLocked: "Locked Market Value",
+      totalBorrowed: "Total Borrowed",
+      availableLiquidity: "Available Liquidity",
+      amountDeposited: "Deposited",
+      amountBorrowed: "Borrowed",
+      depositAPY: "Deposit APY",
+      borrowAPR: "Borrow APR",
+      airdrop: "Airdrop",
+
+      totalDepositedValue: "Your Deposited Value",
+      totalBorrowedValue: "Your Borrowed Value",
+      yourRatio: "Your C-Ratio",
+      collateralizationRatio: "Collateralization Ratio",
+
+      noInputAmount: "Enter amount.",
+      adjustedCollateralization: "Adjusted C-Ratio",
+
+      deposit: "Deposit",
+      walletBalance: "Wallet Balance",
+      noDepositAmount: "Enter amount",
+      notEnoughAsset: "Not enough {{ASSET}}.",
+    
+      withdraw: "Withdraw",
+      availableFunds: "Available Funds",
+      lessFunds: "Not enough funds",
+
+      borrow: "Borrow",
+      maxBorrowAmount: "Maximum Borrow",
+      noDeposits: "You must deposit collateral in order to borrow.",
+      assetIsCurrentDeposit: "You've deposited {{ASSET}} and therefore can't borrow it.", 
+      noLiquidity: "Not enough liquidity.",
+      minCRatio: "This will put your position at our minimum collateralization ratio, therefore placing your account in liquidation territory. Are you sure?",
+      belowMinRatio: "You are under-collateralized. Deposit or repay your debt to avoid liquidation.",
+      subjectToLiquidation: "This trade lowers your collateralization ratio to {{NEW-C-RATIO}}%, which makes you subject to liquidation. Would you still like to borrow?",
+      confirm: "Confirm",
+
+      repay: "Repay",
+      amountOwed: "Amount Owed",
+      oweLess: "You owe less.",
+      max: "Max",
+
+      geobanned: "Jet Protocol is not available in your region.",
+      noMarket: "We were unable to initialize the Jet marketplace.",
+      txSuccess: "Success! Your {{TRADE ACTION}} of {{AMOUNT AND ASSET}} was received. Check out the transaction on the <a href='{{EXPLORER LINK}}' class='text-gradient' target='_blank' style='margin: unset; font-weight: bold;' style='margin: unset; font-weight: bold;'>explorer</a>.",
+      txFailed: "Transaction failed. Not sure what went wrong, please try again later or contact us."
+    },
+    settings: {
+      title: "Settings",
+      wallet: "Wallet",
+      connect: "Connect",
+      worldOfDefi: "Connect your wallet to the world of DeFi.",
+      theme: "Theme",
+      light: "Light",
+      dark: "Dark",
+      language: "Language"
+    },
+    reserveDetail: {
+      reserveSize: "Reserve Size",
+      availableLiquidity: "Available Liquidity",
+      utilisationRate: "Utilisation Rate",
+      viewHistory: "View History",
+      totalBorrowed: "Total Borrowed",
+      maximumLTV: "Maximum LTV",
+      liquidationPremium: "Liquidation Premium",
+      tradeAsset: "Trade {{ASSET}}",
+    },
+    copilot: {
+      name: "Copilot",
+      header: "Hey, Copilot here.",
+      okay: "Okay",
+      suggestions: {
+        unhealthy: {
+          overview: "Your account is unhealthy.",
+          detail: "Your Collateralization Ratio (your total deposited value divided by your total borrowed value) is {{C-RATIO}}% which is {{RATIO BELOW AMOUNT}}% less than Jet marketplace's minimum collateralization ratio of {{JET MIN C-RATIO}}%.",
+          solution: "In order to correct your position, you can deposit more collateral, but I suggest you repay your debt in the Cockpit.",
+          actionText: "Go To Cockpit",
+        },
+        warning: {
+          tenPercent: {
+            overview: "You are dangerously close to liquidation.",
+            detail: "Your Collateralization Ratio (your total deposited value divided by your total borrowed value) is {{C-RATIO}}% which is within 10% of Jet marketplace's minimum collateralization ratio of {{JET MIN C-RATIO}}%.",
+            solution: "In order to avoid liquidation, you can deposit more collateral.",
+            actionText: "Deposit",
+          },
+          twentyPercent: {
+            overview: "Keep an eye on your collateralization ratio.",
+            detail: "Your Collateralization Ratio (your total deposited value divided by your total borrowed value) is {{C-RATIO}}% which is less than 20% above Jet marketplace's minimum collateralization ratio of {{JET MIN C-RATIO}}%.",
+            solution: "Raise your collateralization ratio to healthy levels of 20% or more by depositing more collateral.",
+            actionText: "Deposit",
+          }
+        },
+        deposit: {
+          overview: "{{BEST DEPOSIT APY NAME}} is lookin' good right now.",
+          detail: "<b class='bold'>{{BEST DEPOSIT APY ABBREV}}</b> has the best deposit <b class='bold'>APY (Annual Percentage Yield)</b> in the market right now at <b class='bold'>{{DEPOSIT APY}}%</b>, and your account is in good standing so we recommend adding some collateral by depositing a portion of your <b class='bold'>{{USER BALANCE}} {{BEST DEPOSIT APY ABBREV}}</b>.",
+          actionText: "Let's Do It"
+        },
+        healthy: {
+          overview: "Skies are clear.",
+          detail: "Your account is in good standing and is healthily over-collateralized, let me take a look at the market and see if I can suggest some good moves for you. Check back with me later!",
+        }
+      },
+      alert: {
+        failed: "Mayday!",
+        success: "Success!",
+      }
+    }
+  },
+  // Mandarin
+  zh: {
+    language: "中文",
+    loading: {
+      transactions: "交易发送中...",
+      connectingWallet: "钱包连结中..."
+    },
+    nav: {
+      cockpit: "驾驶舱",
+      settings: "设定",
+      collapse: "缩起"
+    },
+    cockpit: {
+      title: "驾驶舱",
+      asset: "资产",
+      detail: "详细",
+      native: "原生",
+
+      totalValueLocked: "总锁仓量",
+      totalBorrowed: "借贷总额",
+      availableLiquidity: "可用流动性",
+      amountDeposited: "存款金额",
+      amountBorrowed: "借贷金额",
+      depositAPY: "存款 APY",
+      borrowAPR: "借贷 APR",
+      airdrop: "Airdrop",
+
+      totalDepositedValue: "存款总价值",
+      totalBorrowedValue: "借贷总额",
+      yourRatio: "您的质押率",
+      collateralizationRatio: "质押率",
+
+      noInputAmount: "输入金额",
+      adjustedCollateralization: "调整过质押率",
+
+      deposit: "存款",
+      walletBalance: "你的钱包余额",
+      noDepositAmount: "输入金额",
+      notEnoughAsset: "{{ASSET}} 不够",
+    
+      withdraw: "取款",
+      availableFunds: "可用资产",
+      lessFunds: "资产不够",
+
+      borrow: "借贷",
+      maxBorrowAmount: "最高可借贷金额",
+      noDeposits: "您需要存抵押物才能再借款",
+      assetIsCurrentDeposit: "您已存入 {{ASSET}}，因此无法借用。", 
+      noLiquidity: "流动性不足.",
+      minCRatio: "这将使您的头寸处于我们的最低抵押率，从而使您的账户处于清算区域。 你确定吗？",
+      belowMinRatio: "您已低于最小质押率。请多存一些抵押物或偿还一些债务",
+      subjectToLiquidation: "您這個交易會降低质押率到 {{NEW-C-RATIO}}% 比Jet 要求的质押率还低 从而使您的账户处于清算区域。 你确定吗？",
+      confirm: "确认",
+
+      repay: "偿还",
+      amountOwed: "以借贷金额",
+      oweLess: "借贷金额减少",
+      max: '全部',
+
+      geobanned: "您的国家不尊许您用 Jet Protocol.",
+      noMarket: "我们没办法开启Jet的交易市场",
+      txSuccess: "成功了! 我们收到您的 {{AMOUNT AND ASSET}} {{TRADE ACTION}}. 您可以在這查看您的交易 <a href='{{EXPLORER LINK}}' class='text-gradient' target='_blank' style='margin: unset; font-weight: bold;'>explorer</a>.",
+      txFailed: "交易失败. 失败原因不太清楚， 请您再试一次或是跟我们联系."
+    },
+    settings: {
+      title: "设定",
+      wallet: "钱包",
+      connect: "连结",
+      worldOfDefi: "连结到 DeFi 世界",
+      theme: "模式",
+      light: "明亮",
+      dark: "黑暗",
+      language: "语言"
+    },
+    reserveDetail: {
+      reserveSize: "储备规模",
+      availableLiquidity: "可用流动性",
+      utilisationRate: "使用率",
+      viewHistory: "查看历史",
+      totalBorrowed: "总借贷金额",
+      maximumLTV: "最高LTV",
+      liquidationPremium: "清算溢价",
+      tradeAsset: "交易 {{ASSET}}",
+    },
+    copilot: {
+      name: "副驾驶",
+      header: "嘿 我是你的副驾驶.",
+      okay: "Okay",
+      suggestions: {
+        unhealthy: {
+          overview: "您的帐号健康度不良",
+          detail: "您的质押率 {{C-RATIO}}% 比 Jet 要求的质押率还低 {{RATIO BELOW AMOUNT}}%. Jet 要求的最低质押率是 {{JET MIN C-RATIO}}%",
+          solution: "为了更正您的仓位，您可以存入更多的抵押品，但我建议您在 \"驾驶舱\" 中偿还您的债务",
+          actionText: "去驾驶舱"
+        },
+        warning: {
+          tenPercent: {
+            overview: "小心 您快被清算了！",
+            detail: "您的质押率 {{C-RATIO}}% 比Jet 要求的质押率还低 10%. Jet 要求的质押率是 {{JET MIN C-RATIO}}%",
+            solution: "为了避免您被清算 我建议您多存一点抵押物",
+            actionText: "再存抵押物",
+          },
+          twentyPercent: {
+            overview: "注意您的质押率！",
+            detail: "您的质押率 {{C-RATIO}}% 比Jet 要求的质押率还低 20%. Jet 要求的质押率是 {{JET MIN C-RATIO}}%",
+            solution: "多存一点抵押物来增加你的质押率，将您的质押率提高到 20% 或更高的健康水平",
+            actionText: "再存抵押物",
+          }
+        },
+        deposit: {
+          overview: "{{BEST DEPOSIT APY NAME}} 看起来不错",
+          detail: "<b class='bold'>{{BEST DEPOSIT APY ABBREV}}</b> 现在有市场上最高的 <b class='bold'>APY (Annual Percentage Yield)</b>. 您的帐号健康度不错 我建议您多存一点您的 <b class='bold'>{{USER BALANCE}} {{BEST DEPOSIT APY ABBREV}}</b>.",
+          actionText: "再存抵押物"
+        },
+        healthy: {
+          overview: "现在起飞的天气蛮晴朗的",
+          detail: "您的帐号现在健康度不错 我去看看现在的市场 看可不可您做几个建议",
+        },
+      },
+      alert: {
+        failed: "失败了!",
+        success: "成功了!",
+      }
+    }
+  },
+  //Russian
+  ru: {
+    language: "Русский",
+    loading: {
+      transactions: "Транзакции отправляются...",
+      connectingWallet: "Кошелёк подключается..."
+    },
+    nav: {
+      cockpit: "Кабина",
+      settings: "Настройки",
+      collapse: "Свернуть"
+    },
+    cockpit: {
+      title: "Кабина",
+      asset: "Актив",
+      detail: "Подробнее",
+      native: "Базовая",
+      totalValueLocked: "Зарезервированная рыночная стоимость",
+      totalBorrowed: "Общая сумма займов",
+      availableLiquidity: "Доступная ликвидность",
+      amountDeposited: "Депозит",
+      amountBorrowed: "Займ",
+      depositAPY: "ГПД депозита",
+      borrowAPR: "ГПС займа",
+      airdrop: "Airdrop",
+      totalDepositedValue: "Сумма ваших депозитов",
+      totalBorrowedValue: "Сумма ваших займов",
+      yourRatio: "Ваш КО",
+      collateralizationRatio: "Коэффициент обеспечения",
+      noInputAmount: "Введите сумму.",
+      adjustedCollateralization: "Скорректированный КО",
+      deposit: "Пополнить",
+      walletBalance: "Баланс кошелька",
+      noDepositAmount: "Введите сумму",
+      notEnoughAsset: "Недостаточно {{ASSET}}.",
+      withdraw: "Использовать",
+      availableFunds: "Доступные средства",
+      lessFunds: "Недостаточно средств",
+      borrow: "Занять",
+      maxBorrowAmount: "Максимальный займ",
+      noDeposits: "Вы должны предоставить залог, чтобы вы могли занять.",
+      assetIsCurrentDeposit: "Вы предоставили {{ASSET}} и вы не можете занять его же.",
+      noLiquidity: "Недостаточно ликвидности.",
+      minCRatio: "Это действие приведёт к тому, что ваша позиция достигнет минимума коэффициента обеспечения, и ваш счёт может быть подвергнут ликвидации. Вы уверены?",
+      belowMinRatio: "У вас недостаточно средств в залоге. Пополните залог или верните долг чтобы избежать ликвидации.",
+      subjectToLiquidation: "Эта сделка понизит ваш коэффициент обеспечения до {{NEW-C-RATIO}}%, после чего ваш счёт может быть подвергнут ликвидации. Вы всё-равно хотите занять?",
+      confirm: "Подтвердить",
+      repay: "Вернуть",
+      amountOwed: "Сумма долга",
+      oweLess: "Вы должны меньше.",
+      max: "Max",
+      geobanned: "Jet протокол не доступен в вашем регионе.",
+      noMarket: "Торговая площадка Jet не смогла запуститься.",
+      txSuccess: "Успез! Ваш(а) {{TRADE ACTION}} на {{AMOUNT AND ASSET}} получен(а). Проверить транзакцию в <a href='{{EXPLORER LINK}}' class='text-gradient' target='_blank' style='margin: unset; font-weight: bold;'>обозревателе</a>.",
+      txFailed: "Транзакция не прошла. Мы не уверены, что пошло не так. Попробуйте еще раз позже или свяжитесь с нами."
+    },
+    settings: {
+      title: "Настройки",
+      wallet: "Кошелёк",
+      connect: "Подключиться",
+      worldOfDefi: "Подключить ваш кошелек к миру DeFi.",
+      theme: "Вид",
+      light: "Светлый",
+      dark: "Темный",
+      language: "Язык"
+    },
+    reserveDetail: {
+      reserveSize: "Размер резерва",
+      availableLiquidity: "Доступная ликвидность",
+      utilisationRate: "Коэффициент использования",
+      viewHistory: "Показать историю",
+      totalBorrowed: "Всего занято",
+      maximumLTV: "Максимальный КДЗ",
+      liquidationPremium: "Ликвидационная надбавка",
+      tradeAsset: "Торговать {{ASSET}}"
+    },
+    copilot: {
+      name: "Второй пилот",
+      header: "Привет от второго пилота.",
+      okay: "Хорошо",
+      suggestions: {
+        unhealthy: {
+          overview: "Ваш счёт нездоров.",
+          detail: "Ваш коэффициент обеспечения (сумма вашего залога поделённая на сумму ваших займов) сейчас {{C-RATIO}}%, что на {{RATIO BELOW AMOUNT}} меньше, чем минимальный КО {{JET MIN C-RATIO}}% на торговой площадке Jet.",
+          solution: "Чтобы исправить ваше положение, вы можете внести больше залога, но я вам рекомендую лучше вернуть долг в Кабине.",
+          actionText: "Перейти в Кабину"
+        },
+        warning: {
+          tenPercent: {
+            overview: "Вы опасно близки к ликвидации.",
+            detail: "Ваш коэффициент обеспечения (сумма вашего залога поделённая на сумму ваших займов) сейчас {{C-RATIO}}%, что в пределах 10% минимального КО {{JET MIN C-RATIO}}% на торговой площадке Jet.",
+            solution: "Чтобы избежать ликвидации, вы можете пополнить ваш залог.",
+            actionText: "Пополнить"
+          },
+          twentyPercent: {
+            overview: "Уделите внимание вашему коэффициенту обеспечения.",
+            detail: "Ваш коэффициент обеспечения (сумма вашего залога поделённая на сумму ваших займов) сейчас {{C-RATIO}}%, что менее чем на 20% выше минимального КО {{JET MIN C-RATIO}}% на торговой площадке Jet.",
+            solution: "Повысьте ваш коэффициент обеспечения до здорового уровня 20% или более посредством пополнения вашего залога.",
+            actionText: "Пополнить"
+          }
+        },
+        deposit: {
+          overview: "{{BEST DEPOSIT APY NAME}} в данный момент выглядит неплохо.",
+          detail: "<b class='bold'>{{BEST DEPOSIT APY ABBREV}}</b> сейчас предлагает лучшую <b class='bold'>ГПД (годовую процентную доходность)</b> депозита на рынке в <b class='bold'>{{DEPOSIT APY}}%</b>, и ваш счёт находится в хорошем состоянии, так что мы рекомендуем пополнить ваш залог, используя часть вашего <b class='bold'>{{USER BALANCE}} {{BEST DEPOSIT APY ABBREV}}</b>.",
+          actionText: "Полетели"
+        },
+        healthy: {
+          overview: "Небо чистое.",
+          detail: "Ваш счёт в хорошем состоянии и имеет здоровый уровень залога, так что я просмотрю рынок и попробую предложить вам какие-то хорошие варианты. Загляните сюда еще раз попозже!"
+        }
+      },
+      alert: {
+        failed: "Неудача!",
+        success: "Успех!"
+      }
+    }
+  },
+  //Turkish
+  tr: {
+    language: "Türk",
+    loading: {
+      transactions: "İşleminiz yapılıyor...",
+      connectingWallet: "Cüzdan bağlanıyor..."
+    },
+    nav: {
+      cockpit: "Kokpit",
+      settings: "Ayarlar",
+      collapse: "Kollaps"
+    },
+    cockpit: {
+      title: "Kokpit",
+      asset: "Varlık",
+      detail: "Detay",
+      native: "Yerli",
+      totalValueLocked: "Kilitli Piyasa Değeri",
+      totalBorrowed: "Toplam Borçlanma",
+      availableLiquidity: "Müsait Likidite",
+      amountDeposited: "Yatırılan",
+      amountBorrowed: "Ödünç alınmış",
+      depositAPY: "Depozito APY",
+      borrowAPR: "Borç alma APY",
+      airdrop: "Airdrop",
+      totalDepositedValue: "Depozito edilen Değeriniz",
+      totalBorrowedValue: "Borç Değeriniz",
+      yourRatio: "C-Oranınız",
+      collateralizationRatio: "Teminat Oranı",
+      noInputAmount: "Miktarı girin.",
+      adjustedCollateralization: "Düzeltilmiş C-Oranı",
+      deposit: "Depozito",
+      walletBalance: "Cüzdan Bakiyesi",
+      noDepositAmount: "Miktarı girin",
+      notEnoughAsset: "Yeterli {{ASSET}} yok.",
+      withdraw: "Tazmin et",
+      availableFunds: "Kullanılabilir Fonlar",
+      lessFunds: "Yeterli fon yok",
+      borrow: "Borç al",
+      maxBorrowAmount: "Maksimum Borç",
+      noDeposits: "Ödünç almak için teminat yatırmanız gerekiyor.",
+      assetIsCurrentDeposit: "{{ASSET}} <br> yatırdınız ve bu nedenle ödünç alamazsınız.",
+      noLiquidity: "Yeterli likidite yok.",
+      minCRatio: "Bu işlem pozisyonunuzu minimum teminat oranına alacaktır dolayısıyla hesabınızı likidasyon bölgesine çekeceksiniz.Bu işlemi yapmayı istediğinize emin misiniz?",
+      belowMinRatio: "Teminatsızsınız. Likidasyondan kaçınmak için para yatırın veya borcunuzu geri ödeyin.",
+      subjectToLiquidation: "Bu işlem, likidasyon oranınızı %{{NEW-C-RATIO}} 'ya düşürür ve bu da sizi likidasyona tabi kılar. yine de ödünç almak ister misin?",
+      confirm: "Onayla",
+      repay: "Geri öde",
+      amountOwed: "Borçlu Tutar",
+      oweLess: "Daha az borçlusun.",
+      geobanned: "Jet Protokolü bölgenizde kullanılamıyor.",
+      noMarket: "Jet pazaryerini başlatamadık.",
+      txSuccess: "Başarılı! {{TRADE ACTION}} tutarındaki {{AMOUNT AND ASSET}} alındı. <br> <a href='{{EXPLORER LINK}}' class='text-gradient'>explorer</a>'daki işleme göz atın.",
+      txFailed: "İşlem başarısız. Neyin yanlış gittiğinden emin değilim, lütfen daha sonra tekrar deneyin veya bizimle iletişime geçin.",
+      max: "Maks"
+    },
+    settings: {
+      title: "Ayarlar",
+      wallet: "Cüzdan",
+      connect: "Bağlan",
+      worldOfDefi: "Cüzdanınızı DeFi dünyasına bağlayın.",
+      theme: "Tema",
+      light: "Aydınlık",
+      dark: "Karanlık",
+      language: "Dil"
+    },
+    reserveDetail: {
+      reserveSize: "Rezerv Boyutu",
+      availableLiquidity: "Mevcut Likidite",
+      utilisationRate: "Kullanım Oranı",
+      viewHistory: "Geçmişi Görüntüle",
+      totalBorrowed: "Toplam Borç",
+      maximumLTV: "Maksimum Borç-Değer Oranı",
+      liquidationPremium: "Likidasyon Primi",
+      tradeAsset: "{{ASSET}} Al-Sat"
+    },
+    copilot: {
+      name: "Yardımcı Pilot",
+      header: "Yardımcı pilot burada.",
+      okay: "Okay",
+      suggestions: {
+        unhealthy: {
+          overview: "Hesabınız sağlıksız.",
+          detail: "Teminat Oranınız (toplam yatırdığınız değerin toplam ödünç aldığınız değere bölümü) %{{C-RATIO}} olup, Jet pazarının minimum teminatlandırma oranı olan %{{JET MIN C-RATIO}} değerinden %{{RATIO BELOW AMOUNT}} daha düşüktür.",
+          solution: "Pozisyonunuzu düzeltmek için daha fazla teminat yatırabilirsiniz, ancak borcunuzu Kokpit'te ödemenizi öneririm.",
+          actionText: "Kokpite Git"
+        },
+        warning: {
+          tenPercent: {
+            overview: "Tehlikeli bir şekilde likidasyona yakınsınız.",
+            detail: "Teminat Oranınız (toplam yatırdığınız değerin toplam ödünç aldığınız değere bölümü) %{{C-RATIO}} olup, Jet pazarının minimum teminatlandırma oranı olan %{{JET MIN C-RATIO}} %10 içindedir.",
+            solution: "Likidasyondan kaçınmak için daha fazla teminat yatırabilirsiniz.",
+            actionText: "Depozito"
+          },
+          twentyPercent: {
+            overview: "Teminat oranınıza dikkat edin.",
+            detail: "Teminat Oranınız (toplam yatırdığınız değerin toplam ödünç aldığınız değere bölümü) %{{C-RATIO}} 'dur ve bu, Jet pazarının minimum teminatlandırma oranı olan %{{JET MIN C-RATIO}} 'nın %20 üzerindedir.",
+            solution: "Daha fazla teminat yatırarak teminatlandırma oranınızı sağlıklı %20 veya daha yüksek seviyelere yükseltin.",
+            actionText: "Depozito"
+          }
+        },
+        deposit: {
+          overview: "{{BEST DEPOSIT APY NAME}} şu anda iyi görünüyor.",
+          detail: "<b class='bold'>{{BEST DEPOSIT APY ABBREV}}</b> şu anda piyasadaki en iyi mevduata sahip <b class='bold'>APY (Yıllık Yüzde Getiri)</b> <b class='bold'>%{{DEPOSIT APY}}</b> ve hesabınız iyi durumda olduğundan, <b class='bold'>{{USER BALANCE}}</b> hesabınızın bir kısmını yatırarak bir miktar teminat eklemenizi öneririz <b class='bold'>{{BEST DEPOSIT APY ABBREV}}</b>.",
+          actionText: "Haydi Uçalım"
+        },
+        healthy: {
+          overview: "Gökyüzü temiz",
+          detail: "Hesabınız iyi durumda ve sağlıklı bir şekilde fazla teminatlandırılmış durumda, piyasaya bir göz atıp sizin için iyi hamleler önerebilecek miyim bir bakayım. Daha sonra tekrar kontrol edin!"
+        }
+      },
+      alert: {
+        failed: "Ses ses!",
+        success: "Başarılı!"
+      }
+    }
+  }
+};
+
+// Definitions of various terminology
+export const definitions: any = {
+  en: {
+    collateral: {
+      term: "Collateral",
+      definition: "The asset you deposit with us in order to secure your loan. In the event of default on a loan, Jet will seize this collateral in order to recoup the value of the loan."
+    },
+    debt: {
+      term: "Debt",
+      definition: "The value of the loan that is owed or due to Jet Protocol."
+    },
+    collateralizationRatio: {
+      term: "Collateralization Ratio",
+      definition: "The value of your collateral divided by the value of your debt. You are required to over-collateralize your loan, i.e. the fair market value of your deposited assets must exceed the value of the amount you are allowed to borrow."
+    },
+    adjustedCollateralizationRatio: {
+      term: "Adjusted Collateralization Ratio",
+      definition: "A real-time representation of what your collateralization ratio would potentially be if the current trade is submitted."
+    },
+    depositAPY: {
+      term: "Deposit APY",
+      definition: "The total amount of interest you earn on a deposit account over one year, assuming you do not add or withdraw funds for the entire year. Annualized percentage yield (APY) includes your interest rate and the frequency of compounding interest, which is the interest you earn on your principal plus the interest on your earnings."
+    },
+    borrowAPR: {
+      term: "Borrow APR",
+      definition: "The annualized percentage rate (APR) charged on a loan over one year. This takes into account the effect of compounding interest during the loan period, meaning that it reflects the interest also earned by previously accumulated interest."
+    },
+    maximumLtv: {
+      term: "Maximum LTV",
+      definition: "Loan-to-value ratio, a measure of risk used by the Jet program when deciding how large of a loan to approve. Your loan-to-value ratio (LTV) represents the relationship between the size of the loan you take out and the value of the property that secures the loan. See also: collateralization ratio."
+    },
+    utilisationRate: {
+      term: "Utilisation Rate",
+      definition: "The amount of this liquidity pair's potential output within the Jet program that is actually being utilised. This is a function of the total borrowed value against the reserve size."
+    },
+    availLiquidity: {
+      term: "Liquidity",
+      definition: "The efficiency or ease with which an asset can be converted into ready cash without affecting its market price, or quickly bought or sold in the market at a price reflecting its intrinsic value."
+    },
+    liquidationPremium: {
+      term: "Liquidation Premium",
+      definition: "The percent (%) increase on a user's collateral deficit applied to the liquidation value of a user's collateral."
+    }
+  },
+  zh: {
+    collateral: {
+      term: "抵押物",
+      definition: "您存在Jet的资产以保障您的借贷款。 您必须要过度抵押您的借贷款。 您存在Jet的资产市场价值必须要比您的借贷款还高"
+    },
+    debt: {
+      term: "债务",
+      definition: "您在Jet借的贷款价值"
+    },
+    collateralizationRatio: {
+      term: "质押率",
+      definition: "您的抵押品价值除以您的债务价值。 您必须要过度抵押您的借贷款。 您存在Jet的资产市场价值必须要比您的借贷款还高"
+    },
+    adjustedCollateralizationRatio: {
+      term: "调整后的质押率",
+      definition: "如果這筆交易成功後的实时质押率"
+    },
+    depositAPY: {
+      term: "存款 APY",
+      definition: "假设您全年不添加或提取资金，您在存款账户中赚取的利息总额年化百分比收益率 (APY) 包括您的利率和复利频率，即您从本金中加上您的收入利息赚取的利息"
+    },
+    borrowAPR: {
+      term: "借贷 APR",
+      definition: "一年上的贷款收取的年化百分比率 (APR)。 这考虑了贷款期间复利的影响，它反映了先前累积利息也赚取的利息"
+    },
+    maximumLtv: {
+      term: "最高LTV",
+      definition: "贷款价值比（loan to value,简写LTV）是指贷款金额和抵押品价值的比例。 是Jet使用的一种风险度量来决定批准的贷款规模。 您可以去查看质押率"
+    },
+    utilisationRate: {
+      term: "使用率",
+      definition: "该流动性对在 Jet 计划中实际使用的潜在产出量。这是总借入价值与准备金规模的函数"
+    },
+    availLiquidity: {
+      term: "可用流动性",
+      definition: "资产可以在不影响其市场价格的情况下转换为现成现金的效率或容易程度，或以反映其内在价值的价格在市场上快速买卖"
+    },
+    liquidationPremium: {
+      term: "清算溢价",
+      definition: "应用于用户抵押品清算价值的用户抵押品赤字增加的百分比 (%)"
+    },
+  },
+  ru: {
+    collateral: {
+      term: "Залог",
+      definition: "Актив, который вы предоставляете нам для обеспечения вашего займа. В случае невыполнения обязательств, Jet протокол конфискует и использует этот актив, чтобы возместить стоимость вашего займа."
+    },
+    debt: {
+      term: "Долг",
+      definition: "Сумма, которую вы должны, или которая подлежит возврату Jet протоколу."
+    },
+    collateralizationRatio: {
+      term: "Коэффициент обеспечения или КО",
+      definition: "Стоимость вашего залога, разделенная на стоимость вашего долга. Вы должны предоставить залог больше, чем размер вашего долга, то есть справедливая рыночная стоимость ваших активов в залоге должна превышать сумму, которую вам разрешено брать в долг."
+    },
+    adjustedCollateralizationRatio: {
+      term: "Скорректированный коэффициент обеспечения",
+      definition: "Прогноз в реальном времени того, каким примерно будет ваш коэффициент обеспечения, если будет совершена текущая сделка."
+    },
+    depositAPY: {
+      term: "ГПД депозита",
+      definition: "Общая сумма процентов, которые вы зарабатываете на депозитном счете за один год, при условии, что вы не добавляете и не снимаете средства в течение всего года. Годовая процентная доходность (ГПД) включает вашу процентную ставку и частоту начисления сложных процентов, то есть процент, который вы зарабатываете на свою основную сумму, плюс проценты с вашей прибыли."
+    },
+    borrowAPR: {
+      term: "ГПС займа",
+      definition: "Годовая процентная ставка (ГПС), взимаемая по займу сроком на один год. При этом учитывается эффект начисления сложных процентов в течение периода займа, что означает, что он отражает проценты, и также начисления на ранее накопленные проценты."
+    },
+    maximumLtv: {
+      term: "Максимальный КДЗ",
+      definition: "Коэффициент долг/залог (КДЗ) - мера риска, используемая программой Jet при принятии решения об утверждении размера займа. Коэффициент вашего долга к залогу (КДЗ) представляет собой отношение между размером займа, который вы берете, и стоимостью имущества (залога), обеспечивающего займ. См. также: коэффициент обеспечения."
+    },
+    utilisationRate: {
+      term: "Коэффициент использования",
+      definition: "Фактически используемая часть потенциального выхода этой пары ликвидности в рамках программы Jet. Это функция от общей заёмной стоимости по отношению к размеру резерва."
+    },
+    availLiquidity: {
+      term: "Ликвидность",
+      definition: "Эффективность или легкость, с которой актив можно конвертировать в наличные деньги, не влияя на его рыночную цену, или быстро купить или продать на рынке по цене, отражающей его внутреннюю стоимость."
+    },
+    liquidationPremium: {
+      term: "Ликвидационная надбавка",
+      definition: "Процент (%) надбавки к дефициту обеспечения займа, применяемый к ликвидационной стоимости пользовательского залога."
+    }
+  },
+//Turkish
+  tr: {
+    collateral: {
+      term: "Teminat",
+      definition: "Kredinizi güvence altına almak için bize yatırdığınız varlık. Kredinin temerrüde düşmesi durumunda, Jet kredinin değerini geri alabilmek için bu teminatı alacaktır."
+    },
+    debt: {
+      term: "Borç",
+      definition: "Jet Protokolü'ne borçlu olunan veya ödenmesi gereken kredinin değeri"
+    },
+    collateralizationRatio: {
+      term: "Teminatlandırma Oranı veya C-Oranı",
+      definition: "Teminatınızın değeri, borcunuzun değerine bölünür. Kredinizi fazla teminat altına almanız gerekmektedir, yani yatırılan varlıklarınızın adil piyasa değeri, ödünç almanıza izin verilen tutarın değerini aşmalıdır."
+    },
+    adjustedCollateralizationRatio: {
+      term: "Düzeltilmiş Teminat Oranı",
+      definition: "Mevcut işlemin sunulması durumunda teminatlandırma oranınızın potansiyel olarak ne olacağının gerçek zamanlı bir temsili."
+    },
+    depositAPY: {
+      term: "Depozito APY",
+      definition: "Tüm yıl boyunca para eklemediğinizi veya çekmediğinizi varsayarsak, bir mevduat hesabında bir yıl boyunca kazandığınız toplam faiz tutarı. Yıllıklandırılmış yüzde getirisi (APY), faiz oranınızı ve anaparanızdan kazandığınız faiz artı kazançlarınızın faizi olan bileşik faiz sıklığını içerir."
+    },
+    borrowAPR: {
+      term: "Borç APR",
+      definition: "Bir yıl boyunca bir krediye uygulanan yıllık yüzde oranı (APR). Bu, kredi döneminde bileşik faizin etkisini hesaba katar, yani daha önce birikmiş faizle kazanılan faizi de yansıtır."
+    },
+    maximumLtv: {
+      term: "Maksimum LTV",
+      definition: "Kredi-değer oranı, Jet programı tarafından ne kadar büyük bir kredinin onaylanacağına karar verirken kullanılan bir risk ölçüsü. Kredi-değer oranınız (LTV), aldığınız kredinin büyüklüğü ile krediyi güvence altına alan mülkün değeri arasındaki ilişkiyi temsil eder. Ayrıca bakınız: teminatlandırma oranı."
+    },
+    utilisationRate: {
+      term: "Kullanım Oranı",
+      definition: "Bu likidite çiftinin Jet programı içindeki potansiyel çıktısının fiilen kullanılan miktarı. Bu, rezerv büyüklüğüne karşı toplam ödünç alınan değerin bir fonksiyonudur."
+    },
+    availLiquidity: {
+      term: "Likidite",
+      definition: "Bir varlığın piyasa fiyatını etkilemeden hazır nakde dönüştürülebilmesi veya gerçek değerini yansıtan bir fiyattan piyasada hızla alınıp satılabilmesinin etkinliği veya kolaylığı."
+    },
+    liquidationPremium: {
+      term: "Likidasyon Primi",
+      definition: "Kullanıcının teminat acığında ki (%) artışının, o kullanıcının varlıklarına likadasyon sırasında uygunlanması"
+    }
+  }
+}
