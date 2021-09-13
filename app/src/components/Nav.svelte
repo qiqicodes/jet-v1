@@ -244,7 +244,7 @@
     font-size: 10px;
   }
 
-  @media screen and (max-width: 1000px) {
+  @media screen and (max-width: 1100px) {
     .desktop, .mobile {
       display: none;
     }

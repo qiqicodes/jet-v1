@@ -4,9 +4,10 @@
 </script>
 
 <div class="view-container flex align-center justify-center column">
-  <h2 class="view-header">
+  <img src="img/ui/failed_init.gif" alt="Failed To Init App" />
+  <h1 class="bicyclette">
     {dictionary[$PREFERRED_LANGUAGE].copilot.alert.failed}
-  </h2>
+  </h1>
   {#if $GEOBANNED}
     <span>
       {dictionary[$PREFERRED_LANGUAGE].cockpit.geobanned}
@@ -27,8 +28,20 @@
     height: 100vh !important;
     padding: unset !important;
   }
-  .view-header {
+  h1 {
     color: var(--failure);
     font-size: 30px;
+  }
+  span {
+    max-width: 200px;
+  }
+  img {
+    width: 500px;
+  }
+
+  @media screen and (max-width: 1100px) {
+    img {
+      width: 300px;
+    }
   }
 </style>

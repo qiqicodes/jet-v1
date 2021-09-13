@@ -1,5 +1,5 @@
 import { BN } from '@project-serum/anchor';
-import type { AccountInfo as TokenAccountInfo, MintInfo } from '@solana/spl-token';
+import type { AccountInfo as TokenAccountInfo, MintInfo, u64 } from '@solana/spl-token';
 import type { Market, AssetStore, Obligation } from '../models/JetTypes';
 import { MARKET, ASSETS, DARK_THEME, WALLET } from '../store';
 
@@ -290,3 +290,21 @@ export class TokenAmount {
     return new TokenAmount(amount, this.decimals);
   }
 };
+
+export type AmountUnits = { tokens?: {}, depositNotes?: {}, loanNotes?: {} };
+
+export class Amount {
+  private constructor(public units: AmountUnits, public value: BN) {}
+
+  static tokens(amount: number | u64): Amount {
+    return new Amount({ tokens: {} }, new BN(amount));
+  }
+
+  static depositNotes(amount: number | u64): Amount {
+    return new Amount({ depositNotes: {} }, new BN(amount));
+  }
+
+  static loanNotes(amount: number | u64): Amount {
+    return new Amount({ loanNotes: {} }, new BN(amount));
+  }
+}

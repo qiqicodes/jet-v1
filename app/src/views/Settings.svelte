@@ -133,7 +133,7 @@
     opacity: 0.6;
     padding: var(--spacing-sm);
   }
-  @media screen and (max-width: 1000px) {
+  @media screen and (max-width: 1100px) {
     .setting {
       padding: 0 var(--spacing-md);
     }

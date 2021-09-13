@@ -178,9 +178,10 @@ export const dictionary: any = {
       maxBorrowAmount: "Maximum Borrow",
       noDeposits: "You must deposit collateral in order to borrow.",
       assetIsCurrentDeposit: "You've deposited {{ASSET}} and therefore can't borrow it.", 
+      assetIsCurrentBorrow: "You've borrowed {{ASSET}} and therefore can't deposit it.", 
       noLiquidity: "Not enough liquidity.",
       minCRatio: "This will put your position at our minimum collateralization ratio, therefore placing your account in liquidation territory. Are you sure?",
-      belowMinRatio: "You are under-collateralized. Deposit or repay your debt to avoid liquidation.",
+      belowMinCRatio: "You are under-collateralized. Deposit or repay your debt to avoid liquidation.",
       subjectToLiquidation: "This trade lowers your collateralization ratio to {{NEW-C-RATIO}}%, which makes you subject to liquidation. Would you still like to borrow?",
       confirm: "Confirm",
 
@@ -252,6 +253,7 @@ export const dictionary: any = {
       alert: {
         failed: "Mayday!",
         success: "Success!",
+        airdropSuccess: "We have Airdropped you {{UI AMOUNT}} {{RESERVE ABBREV}}. Please refresh the app to see your new balance."
       }
     }
   },
@@ -303,9 +305,10 @@ export const dictionary: any = {
       maxBorrowAmount: "最高可借贷金额",
       noDeposits: "您需要存抵押物才能再借款",
       assetIsCurrentDeposit: "您已存入 {{ASSET}}，因此无法借用。", 
+      assetIsCurrentBorrow: "", 
       noLiquidity: "流动性不足.",
       minCRatio: "这将使您的头寸处于我们的最低抵押率，从而使您的账户处于清算区域。 你确定吗？",
-      belowMinRatio: "您已低于最小质押率。请多存一些抵押物或偿还一些债务",
+      belowMinCRatio: "您已低于最小质押率。请多存一些抵押物或偿还一些债务",
       subjectToLiquidation: "您這個交易會降低质押率到 {{NEW-C-RATIO}}% 比Jet 要求的质押率还低 从而使您的账户处于清算区域。 你确定吗？",
       confirm: "确认",
 
@@ -377,6 +380,7 @@ export const dictionary: any = {
       alert: {
         failed: "失败了!",
         success: "成功了!",
+        airdropSuccess: "We have Airdropped you {{UI AMOUNT}} {{RESERVE ABBREV}}. Please refresh the app to see your new balance."
       }
     }
   },
@@ -422,9 +426,10 @@ export const dictionary: any = {
       maxBorrowAmount: "Максимальный займ",
       noDeposits: "Вы должны предоставить залог, чтобы вы могли занять.",
       assetIsCurrentDeposit: "Вы предоставили {{ASSET}} и вы не можете занять его же.",
+      assetIsCurrentBorrow: "", 
       noLiquidity: "Недостаточно ликвидности.",
       minCRatio: "Это действие приведёт к тому, что ваша позиция достигнет минимума коэффициента обеспечения, и ваш счёт может быть подвергнут ликвидации. Вы уверены?",
-      belowMinRatio: "У вас недостаточно средств в залоге. Пополните залог или верните долг чтобы избежать ликвидации.",
+      belowMinCRatio: "У вас недостаточно средств в залоге. Пополните залог или верните долг чтобы избежать ликвидации.",
       subjectToLiquidation: "Эта сделка понизит ваш коэффициент обеспечения до {{NEW-C-RATIO}}%, после чего ваш счёт может быть подвергнут ликвидации. Вы всё-равно хотите занять?",
       confirm: "Подтвердить",
       repay: "Вернуть",
@@ -493,7 +498,8 @@ export const dictionary: any = {
       },
       alert: {
         failed: "Неудача!",
-        success: "Успех!"
+        success: "Успех!",
+        airdropSuccess: "We have Airdropped you {{UI AMOUNT}} {{RESERVE ABBREV}}. Please refresh the app to see your new balance."
       }
     }
   },
@@ -539,9 +545,10 @@ export const dictionary: any = {
       maxBorrowAmount: "Maksimum Borç",
       noDeposits: "Ödünç almak için teminat yatırmanız gerekiyor.",
       assetIsCurrentDeposit: "{{ASSET}} <br> yatırdınız ve bu nedenle ödünç alamazsınız.",
+      assetIsCurrentBorrow: "", 
       noLiquidity: "Yeterli likidite yok.",
       minCRatio: "Bu işlem pozisyonunuzu minimum teminat oranına alacaktır dolayısıyla hesabınızı likidasyon bölgesine çekeceksiniz.Bu işlemi yapmayı istediğinize emin misiniz?",
-      belowMinRatio: "Teminatsızsınız. Likidasyondan kaçınmak için para yatırın veya borcunuzu geri ödeyin.",
+      belowMinCRatio: "Teminatsızsınız. Likidasyondan kaçınmak için para yatırın veya borcunuzu geri ödeyin.",
       subjectToLiquidation: "Bu işlem, likidasyon oranınızı %{{NEW-C-RATIO}} 'ya düşürür ve bu da sizi likidasyona tabi kılar. yine de ödünç almak ister misin?",
       confirm: "Onayla",
       repay: "Geri öde",
@@ -610,7 +617,8 @@ export const dictionary: any = {
       },
       alert: {
         failed: "Ses ses!",
-        success: "Başarılı!"
+        success: "Başarılı!",
+        airdropSuccess: "We have Airdropped you {{UI AMOUNT}} {{RESERVE ABBREV}}. Please refresh the app to see your new balance."
       }
     }
   }

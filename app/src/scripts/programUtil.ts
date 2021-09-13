@@ -1,7 +1,7 @@
 import { BN } from "@project-serum/anchor";
 import * as anchor from "@project-serum/anchor";
 import { MintInfo, MintLayout, AccountInfo as TokenAccountInfo, AccountLayout as TokenAccountLayout } from "@solana/spl-token";
-import { AccountInfo, Commitment, Connection, Context, PublicKey, Signer, Transaction, TransactionInstruction } from "@solana/web3.js";
+import { AccountInfo, Commitment, Connection, Context, PublicKey, SignatureResult, Signer, Transaction, TransactionInstruction } from "@solana/web3.js";
 import { Buffer } from "buffer";
 import type { HasPublicKey, IdlMetadata, JetMarketReserveInfo, MarketAccount, ObligationAccount, ObligationPositionStruct, ReserveAccount, ReserveConfigStruct, ReserveStateStruct, ToBytes } from "../models/JetTypes";
 import { MarketReserveInfoList, PositionInfoList, ReserveStateLayout } from "./layout";
@@ -264,7 +264,6 @@ export const getAccountInfoAndSubscribe = function (
   return subscriptionId;
 };
 
-
 export const sendTransaction = async (
   provider: anchor.Provider,
   instructions: TransactionInstruction[],
@@ -277,7 +276,7 @@ export const sendTransaction = async (
 
   // Building phase
   let transaction = new Transaction();
-  instructions.forEach((instruction) => transaction.add(instruction));
+  transaction.instructions = instructions;
   transaction.recentBlockhash = (
     await provider.connection.getRecentBlockhash()
   ).blockhash;
@@ -297,7 +296,7 @@ export const sendTransaction = async (
 
   // Sending phase
   const rawTransaction = transaction.serialize();
-  console.log(`Sending transaction, ${rawTransaction.byteLength} bytes...`, transaction);
+  console.log(`Sending transaction, ${rawTransaction.byteLength} of 1232 bytes...`, transaction);
   const txid = await provider.connection.sendRawTransaction(
     rawTransaction,
     provider.opts
@@ -324,6 +323,75 @@ export const sendTransaction = async (
   return [ok, txid];
 };
 
+export const sendAllTransactions = async (
+  provider: anchor.Provider,
+  transactions: { ix: TransactionInstruction[], signers?: Signer[] }[],
+  skipConfirmation?: boolean
+): Promise<[ok: boolean, txid: string[] | undefined]> => {
+  if (!provider.wallet?.publicKey) {
+    throw new Error("Wallet is not connected");
+  }
+
+  // Building and partial sign phase
+  const recentBlockhash = await provider.connection.getRecentBlockhash();
+  const txs: Transaction[] = [];
+  for (const tx of transactions) {
+    if (tx.ix.length == 0) {
+      continue;
+    }
+    let transaction = new Transaction();
+    transaction.instructions = tx.ix;
+    transaction.recentBlockhash = recentBlockhash.blockhash;
+    transaction.feePayer = provider.wallet.publicKey;
+    if (tx.signers && tx.signers.length > 0) {
+      transaction.partialSign(...tx.signers)
+    }
+    txs.push(transaction);
+  }
+
+  // Signing phase
+  let signedTransactions: Transaction[];
+  try {
+    signedTransactions = await provider.wallet.signAllTransactions(txs);
+  }
+  catch (ex) {
+    // wallet refused to sign
+    return [false, ['cancelled']];
+  }
+
+  // Sending phase
+  let ok = true;
+  const txids: string[] = [];
+  for (const transaction of signedTransactions) {
+    const rawTransaction = transaction.serialize();
+    console.log(`Sending transaction, ${rawTransaction.byteLength} of 1232 bytes...`, transaction);
+    const txid = await provider.connection.sendRawTransaction(
+      rawTransaction,
+      provider.opts
+    );
+    txids.push(txid);
+
+    // Confirming phase
+    if (!skipConfirmation) {
+      const status = (
+        await provider.connection.confirmTransaction(
+          txid,
+          provider.opts.commitment
+        )
+      ).value;
+
+      if (status?.err) {
+        ok = false;
+        console.log("Transaction failed...", explorerUrl("transaction", txid));
+        return [ok, txids];
+      } else {
+        console.log("Transaction success...", explorerUrl("transaction", txid));
+      }
+    }
+  }
+  return [ok, txids];
+};
+
 export const explorerUrl = (type: "transaction", address: string, cluster?: string) => {
   const clusterParam = cluster !== undefined ? `?cluster=${cluster}` : "";
   return `https://explorer.solana.com/${type}/${address}${clusterParam}`
@@ -338,7 +406,7 @@ export const transactionErrorToString = (error: any) => {
   if (error.code) {
     return `Code ${error.code}: ${error.msg}\n${error.logs}\n${error.stack}`
   } else {
-    return error.toString();
+    return error;
   }
 };
 
@@ -380,7 +448,7 @@ export const parseReserveAccount = (account: Buffer, coder: anchor.Coder) => {
   let reserve = coder.accounts.decode<ReserveAccount>("Reserve", account);
 
   const reserveState = ReserveStateLayout.decode(Buffer.from(reserve.state as any as number[])) as ReserveStateStruct;
-  
+
   reserve.state = reserveState;
   return reserve;
 };

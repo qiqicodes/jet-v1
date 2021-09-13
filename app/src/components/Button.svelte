@@ -54,7 +54,7 @@
     box-shadow: var(--neu-shadow);
   }
 
-  @media screen and (max-width: 1000px) {
+  @media screen and (max-width: 1100px) {
     button {
       font-size: 12px;
     }

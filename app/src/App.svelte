@@ -37,8 +37,8 @@
         init = false;
       }
     } catch (err) {
+      console.error(`Unable to init app: ${err}`)
       rollbar.critical(`Unable to init app: ${err}`);
-      console.log(err);
       init = false;
     }
   });

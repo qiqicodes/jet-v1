@@ -8,7 +8,7 @@
   import type { Reserve, Obligation } from '../models/JetTypes';
   import { TRADE_ACTION, MARKET, ASSETS, CURRENT_RESERVE, NATIVE, COPILOT, PREFERRED_LANGUAGE } from '../store';
   import { inDevelopment, airdrop, deposit, withdraw, borrow, repay } from '../scripts/jet';
-  import { currencyFormatter, totalAbbrev, getObligationData, TokenAmount } from '../scripts/utils';
+  import { currencyFormatter, totalAbbrev, getObligationData, TokenAmount, Amount } from '../scripts/utils';
   import { dictionary, definitions } from '../scripts/localization'; 
   import { explorerUrl } from '../scripts/programUtil';
   import Loader from '../components/Loader.svelte';
@@ -20,10 +20,12 @@
   let walletBalance = TokenAmount.zero(0);
   let collateralBalances: Record<string, number> = {};
   let loanBalances: Record<string, number> = {};
-  let maxBorrowAmount = TokenAmount.zero(0);
-  let adjustedRatio: number = 0;
-  let belowMinRatio: boolean = false;
+  let maxBorrowAmount: number = 0;
+  let maxWithdrawAmount: number = 0;
+  let adjustedRatio: number;
+  let belowMinCRatio: boolean = false;
   let assetIsCurrentDeposit: boolean = false;
+  let assetIsCurrentBorrow: boolean = false;
   let noDeposits: boolean = true;
   let obligation: Obligation;
   let inputAmount: number | null;
@@ -45,7 +47,7 @@
       searchInput: true
     },
     labels: {
-        search: 'Search Market..',    
+        search: 'Search Market...',    
     }
   };
 
@@ -57,13 +59,18 @@
     }
 
     const [ok, txid] = await airdrop(reserve.abbrev, amount.amount);
-
     if (ok && txid) {
       COPILOT.set({
         alert: {
           good: true,
           header: dictionary[$PREFERRED_LANGUAGE].copilot.alert.success,
-          text: `We have Airdropped you ${amount.uiAmount} ${reserve.abbrev}. Please check your wallet.`
+          text:  dictionary[$PREFERRED_LANGUAGE].copilot.alert.airdropSuccess
+            .replace('{{UI AMOUNT}}', amount.uiAmount)
+            .replace('{{RESERVE ABBREV}}', reserve.abbrev),
+          action: {
+            text: 'Refresh',
+            onClick: () => window.location.reload()
+          }
         }
       });
     } else if (!ok && !txid) {
@@ -94,17 +101,20 @@
 
     disabledMessage = '';
     disabledInput = false;
-    if ($TRADE_ACTION === 'deposit' && walletBalance.amount.isZero()) {
+    if ($TRADE_ACTION === 'deposit' && (walletBalance.amount.isZero() || assetIsCurrentBorrow)) {
       disabledInput = true;
-      return;
+      if (assetIsCurrentBorrow) {
+        disabledMessage = dictionary[$PREFERRED_LANGUAGE].cockpit.assetIsCurrentBorrow
+          .replace('{{ASSET}}', $CURRENT_RESERVE.abbrev);
+      }
     } else if ($TRADE_ACTION === 'withdraw' && !collateralBalances[$CURRENT_RESERVE.abbrev]) {
       disabledInput = true;
-    } else if ($TRADE_ACTION === 'borrow' && (noDeposits || belowMinRatio || assetIsCurrentDeposit)) {
+    } else if ($TRADE_ACTION === 'borrow' && (noDeposits || belowMinCRatio || assetIsCurrentDeposit || !$CURRENT_RESERVE.availableLiquidity.uiAmountFloat)) {
       disabledInput = true;
       if (noDeposits) {
         disabledMessage = disabledMessage = dictionary[$PREFERRED_LANGUAGE].cockpit.noDeposits;
-      } else if (belowMinRatio) {
-        disabledMessage = disabledMessage = dictionary[$PREFERRED_LANGUAGE].cockpit.belowMinRatio;
+      } else if (belowMinCRatio) {
+        disabledMessage = disabledMessage = dictionary[$PREFERRED_LANGUAGE].cockpit.belowMinCRatio;
       } else if (assetIsCurrentDeposit) {
         disabledMessage = disabledMessage = dictionary[$PREFERRED_LANGUAGE].cockpit.assetIsCurrentDeposit
           .replace('{{ASSET}}', $CURRENT_RESERVE.abbrev);
@@ -130,9 +140,9 @@
         maxInputValue = walletBalance.uiAmountFloat;
       }
     } else if ($TRADE_ACTION === 'withdraw') {
-      maxInputValue = collateralBalances[$CURRENT_RESERVE.abbrev];
+      maxInputValue = maxWithdrawAmount;
     } else if ($TRADE_ACTION === 'borrow') {
-      maxInputValue = maxBorrowAmount.uiAmountFloat;
+      maxInputValue = maxBorrowAmount;
     } else {
       maxInputValue =  loanBalances[$CURRENT_RESERVE.abbrev]
     }
@@ -148,13 +158,13 @@
     }
 
     if ($TRADE_ACTION === 'deposit') {
-      adjustedRatio = obligation.depositedValue + ((inputAmount ?? 0) * 60) / (
+      adjustedRatio = (obligation.depositedValue + ((inputAmount ?? 0) * $CURRENT_RESERVE.price)) / (
           obligation.borrowedValue > 0
             ? obligation.borrowedValue
               : 1
         );
     } else if ($TRADE_ACTION === 'withdraw') {
-      adjustedRatio = obligation.depositedValue - ((inputAmount ?? 0) * $CURRENT_RESERVE.price) / (
+      adjustedRatio = (obligation.depositedValue - ((inputAmount ?? 0) * $CURRENT_RESERVE.price)) / (
           obligation.borrowedValue > 0 
             ? obligation.borrowedValue
               : 1
@@ -171,6 +181,78 @@
             ? (obligation.borrowedValue - ((inputAmount ?? 0) * $CURRENT_RESERVE.price))
              : 1
       );
+    }
+  };
+
+  // Update all market/user data
+  const updateValues = (): void => {
+    // Market and User data
+    marketTVL = 0;
+    tableData = [];
+    for (let r in $MARKET.reserves) {
+      marketTVL += $MARKET.reserves[r].marketSize.muln($MARKET.reserves[r].price).uiAmountFloat;
+      if ($MARKET.reserves[r]) {
+        tableData.push($MARKET.reserves[r]);
+      }
+
+      collateralBalances[r] = $ASSETS?.tokens[r]?.collateralBalance.uiAmountFloat ?? 0;
+      loanBalances[r] = $ASSETS?.tokens[r]?.loanBalance.uiAmountFloat ?? 0;
+    };
+
+    if ($CURRENT_RESERVE && $ASSETS?.tokens[$CURRENT_RESERVE.abbrev]) {
+      // Deposit data
+      walletBalance = $ASSETS.tokens[$CURRENT_RESERVE.abbrev].tokenMintPubkey.equals(NATIVE_MINT) 
+        ? $ASSETS.sol
+        : $ASSETS.tokens[$CURRENT_RESERVE.abbrev].walletTokenBalance;
+        
+      // Borrow data
+      obligation = getObligationData();
+      belowMinCRatio = obligation.depositedValue / obligation.borrowedValue <= $MARKET.minColRatio;
+      noDeposits = !obligation.depositedValue;
+      assetIsCurrentDeposit = collateralBalances[$CURRENT_RESERVE.abbrev] > 0;
+      assetIsCurrentBorrow = loanBalances[$CURRENT_RESERVE.abbrev] > 0;
+      maxBorrowAmount = ((obligation.depositedValue / $MARKET.minColRatio) - obligation.borrowedValue) / $CURRENT_RESERVE.price;
+      if (maxBorrowAmount > $CURRENT_RESERVE.availableLiquidity.uiAmountFloat) {
+        maxBorrowAmount = $CURRENT_RESERVE.availableLiquidity.uiAmountFloat;
+      }
+
+      // Withdraw data
+      maxWithdrawAmount = (obligation.depositedValue - ($MARKET.minColRatio * obligation.borrowedValue)) / $CURRENT_RESERVE.price;
+      if (maxWithdrawAmount > collateralBalances[$CURRENT_RESERVE.abbrev]) {
+        maxWithdrawAmount = collateralBalances[$CURRENT_RESERVE.abbrev];
+      }
+
+      // Set adjusted ratio to current ratio
+      if (!adjustedRatio && obligation.colRatio) {
+        adjustedRatio = obligation.colRatio;
+      }
+    }
+
+    // Check if user's current position shouldn't allow trades
+    checkDisabledInput();
+
+    // Get max input value for current trade scenario
+    getMaxInputValue();
+  };
+
+  // Check scenario and submit trade
+  const checkSubmit = () => {
+    if (!disabledInput) {
+      if (inputAmount && obligation.colRatio > $MARKET.minColRatio && adjustedRatio <= $MARKET.minColRatio) {
+        COPILOT.set({
+          suggestion: {
+            good: false,
+            overview: dictionary[$PREFERRED_LANGUAGE].cockpit.subjectToLiquidation
+              .replace('{{NEW-C-RATIO}}', currencyFormatter(adjustedRatio * 100, false, 1)),                        
+            action: {
+              text: dictionary[$PREFERRED_LANGUAGE].cockpit.confirm,
+              onClick: () => submitTrade()
+            }
+          }
+        });
+      } else {
+        submitTrade();
+      }
     }
   };
 
@@ -203,7 +285,8 @@
 
       inputError = '';
       const depositLamports = TokenAmount.tokens(tradeAmountString, $CURRENT_RESERVE.decimals).amount;
-      [ok, txid] = await deposit($CURRENT_RESERVE.abbrev, depositLamports);
+      const depositAmount = Amount.tokens(depositLamports);
+      [ok, txid] = await deposit($CURRENT_RESERVE.abbrev, depositAmount);
     } else if ($TRADE_ACTION === 'withdraw') {
       if (TokenAmount.tokens(tradeAmountString, $CURRENT_RESERVE.decimals).amount.gt($CURRENT_RESERVE.availableLiquidity.amount)) {
         inputAmount = null;
@@ -222,7 +305,10 @@
 
       inputError = '';
       const withdrawLamports = TokenAmount.tokens(inputAmount.toString(), $CURRENT_RESERVE.decimals).amount;
-      [ok, txid] = await withdraw($CURRENT_RESERVE.abbrev, new BN(withdrawLamports));
+      const withdrawAmount = inputAmount === collateralBalances[$CURRENT_RESERVE.abbrev] ?
+        Amount.depositNotes($ASSETS.tokens[$CURRENT_RESERVE.abbrev].collateralBalance.amount) :
+        Amount.tokens(withdrawLamports);
+      [ok, txid] = await withdraw($CURRENT_RESERVE.abbrev, withdrawAmount);
     } else if ($TRADE_ACTION === 'borrow') {
       if (TokenAmount.tokens(tradeAmountString, $CURRENT_RESERVE.decimals).amount.gt($CURRENT_RESERVE.availableLiquidity.amount)) {
         inputAmount = null;
@@ -231,17 +317,17 @@
         return;
       }
 
-      if (Math.ceil((adjustedRatio * 1000) / 1000) < $MARKET.minColRatio || 
-      TokenAmount.tokens(tradeAmountString, $CURRENT_RESERVE.decimals).amount.gt(maxBorrowAmount.amount)) {
+       if ((adjustedRatio && Math.ceil((adjustedRatio * 1000) / 1000) < $MARKET.minColRatio) || inputAmount > maxBorrowAmount) {
         inputAmount = null;
-        inputError = dictionary[$PREFERRED_LANGUAGE].cockpit.belowCRatio;
+        inputError = dictionary[$PREFERRED_LANGUAGE].cockpit.belowMinCRatio;
         sendingTrade = false;
         return;
       }
 
       inputError = '';
-      const borrowLamports = TokenAmount.tokens(tradeAmountString, $CURRENT_RESERVE.decimals).amount;
-      [ok, txid] = await borrow($CURRENT_RESERVE.abbrev, borrowLamports);
+      const borrowLamports = TokenAmount.tokens(tradeAmountString, $CURRENT_RESERVE.decimals);
+      const borrowAmount = Amount.tokens(borrowLamports.amount);
+      [ok, txid] = await borrow($CURRENT_RESERVE.abbrev, borrowAmount);
     } else if ($TRADE_ACTION === 'repay') {
       let loanBalance = $ASSETS.tokens[$CURRENT_RESERVE.abbrev].loanBalance;
       if(!loanBalance) {
@@ -257,8 +343,11 @@
       }
 
       inputError = '';
-      const repayLamports = TokenAmount.tokens(inputAmount.toString(), $CURRENT_RESERVE.decimals).amount;
-      [ok, txid] = await repay($CURRENT_RESERVE.abbrev, repayLamports);
+      const repayLamports = TokenAmount.tokens(inputAmount.toString(), $CURRENT_RESERVE.decimals);
+      const repayAmount = inputAmount === loanBalances[$CURRENT_RESERVE.abbrev] ?
+        Amount.loanNotes($ASSETS.tokens[$CURRENT_RESERVE.abbrev].loanNoteBalance.amount) :
+        Amount.tokens(repayLamports.amount);
+      [ok, txid] = await repay($CURRENT_RESERVE.abbrev, repayAmount);
     }
     
     
@@ -289,52 +378,6 @@
     sendingTrade = false;
     return;
   };
-
-  // Update all market/user data
-  const updateValues = (): void => {
-    // Market and User data
-    marketTVL = 0;
-    tableData = [];
-    for (let r in $MARKET.reserves) {
-      marketTVL += $MARKET.reserves[r].marketSize.muln($MARKET.reserves[r].price).uiAmountFloat;
-      if ($MARKET.reserves[r]) {
-        tableData.push($MARKET.reserves[r]);
-      }
-
-      collateralBalances[r] = $ASSETS?.tokens[r]?.collateralBalance.uiAmountFloat ?? 0;
-      loanBalances[r] = $ASSETS?.tokens[r]?.loanBalance.uiAmountFloat ?? 0;
-    };
-
-    if ($CURRENT_RESERVE && $ASSETS?.tokens[$CURRENT_RESERVE.abbrev]) {
-      // Deposit data
-      walletBalance = $ASSETS.tokens[$CURRENT_RESERVE.abbrev].tokenMintPubkey.equals(NATIVE_MINT) 
-        ? $ASSETS.sol
-        : $ASSETS.tokens[$CURRENT_RESERVE.abbrev].walletTokenBalance;
-        
-      // Borrow data
-      obligation = getObligationData();
-      belowMinRatio = obligation.depositedValue / obligation.borrowedValue <= $MARKET.minColRatio;
-      noDeposits = !obligation.depositedValue;
-      assetIsCurrentDeposit = collateralBalances[$CURRENT_RESERVE.abbrev] > 0;
-      adjustedRatio = obligation.borrowedValue ? 
-        obligation.depositedValue / obligation.borrowedValue
-          : 0;
-      maxBorrowAmount = new TokenAmount(
-          new BN(((obligation.depositedValue / $MARKET.minColRatio) - obligation.borrowedValue) / $CURRENT_RESERVE.price),
-          $CURRENT_RESERVE.decimals
-        );
-
-      if (maxBorrowAmount > $CURRENT_RESERVE.availableLiquidity) {
-        maxBorrowAmount = $CURRENT_RESERVE.availableLiquidity;
-      }
-    }
-
-    // Check if user's current position shouldn't allow trades
-    checkDisabledInput();
-
-    // Get max input value for current trade scenario
-    getMaxInputValue();
-  }
 
 
   // Reactive statement to update data
@@ -394,9 +437,13 @@
             ${obligation?.borrowedValue && (obligation?.colRatio <= $MARKET.minColRatio) 
               ? 'color: var(--failure);' 
                 : 'color: var(--success);'}`}>
-            {obligation?.borrowedValue
-              ? currencyFormatter(obligation?.colRatio * 100, false, 1)
-                : '∞'}
+            {#if obligation?.borrowedValue && obligation?.colRatio > 10}
+              &gt;1000
+            {:else if obligation?.borrowedValue && obligation?.colRatio < 10}
+              {currencyFormatter(obligation?.colRatio * 100, false, 1)}
+            {:else}
+              ∞
+            {/if}
             {#if obligation?.borrowedValue}
               <span style="color: inherit;">
                 %
@@ -462,7 +509,7 @@
           {dictionary[$PREFERRED_LANGUAGE].cockpit.amountBorrowed}
         </th>
         <th>
-          <!--Extra column for arrow-->
+          <!--Empty column for arrow-->
         </th>
       </thead>
       <div class="datatable-divider">
@@ -501,8 +548,8 @@
               {$rows[i].borrowAPR ? ($rows[i].borrowAPR * 100).toFixed(2) : 0}%
             </td>
             <td on:click={() => changeReserve($rows[i])}
-              style={collateralBalances[$rows[i]] ? 
-                'color: var(--success) !important;' : ''}>
+              style={collateralBalances[$rows[i].abbrev] ? 
+                'color: var(--jet-green) !important;' : ''}>
               {totalAbbrev(
                 collateralBalances[$rows[i].abbrev],
                 $rows[i].price,
@@ -510,8 +557,8 @@
               )}
             </td>
             <td on:click={() => changeReserve($rows[i])}
-             style={loanBalances[$rows[i]] ? 
-              'color: var(--failure) !important;' : ''}>
+             style={loanBalances[$rows[i].abbrev] ? 
+              'color: var(--jet-blue) !important;' : ''}>
               {totalAbbrev(
                 loanBalances[$rows[i].abbrev],
                 $rows[i].price,
@@ -521,8 +568,9 @@
             <!--Faucet for testing if in development-->
             {#if inDevelopment}
               <td class="faucet" on:click={() => doAirdrop($rows[i])}>
-                <i class="text-gradient fas fa-tint"
-                  style="margin-right: var(--spacing-lg);">
+                <i class="text-gradient fas fa-parachute-box"
+                  title={`Airdrop ${$rows[i].abbrev}`}
+                  style="margin-right: var(--spacing-lg); font-size: 18px !important;">
                 </i>
               </td>
             {:else}
@@ -585,17 +633,12 @@
               </p>
             {:else if $TRADE_ACTION === 'withdraw'}
               <p>
-                {currencyFormatter(
-                  collateralBalances[$CURRENT_RESERVE.abbrev],
-                  false, 
-                  $CURRENT_RESERVE.decimals
-                )} 
+                {currencyFormatter(maxWithdrawAmount, false, $CURRENT_RESERVE.decimals)} 
                 {$CURRENT_RESERVE.abbrev}
               </p>
             {:else if $TRADE_ACTION === 'borrow'}
               <p>
-                {maxBorrowAmount.amount.isZero() ? 0
-                  : currencyFormatter(maxBorrowAmount.uiAmountFloat, false, $CURRENT_RESERVE.decimals)} 
+                {currencyFormatter(maxBorrowAmount, false, $CURRENT_RESERVE.decimals)} 
                 {$CURRENT_RESERVE.abbrev}
               </p>
             {:else if $TRADE_ACTION === 'repay'}
@@ -616,10 +659,14 @@
             {dictionary[$PREFERRED_LANGUAGE].cockpit.adjustedCollateralization.toUpperCase()}
           </span>
           <p class="bicyclette" style={obligation?.borrowedValue ? '' : 'font-size: 30px;'}>
-            {obligation?.borrowedValue
-              ? currencyFormatter(adjustedRatio * 100, false, 1) + '%'
-                : '∞'}
-            <sup class="far fa-question-circle"
+            {#if adjustedRatio > 10}
+              &gt; 1000%
+            {:else if adjustedRatio < 10}
+              {currencyFormatter(adjustedRatio * 100, false, 1) + '%'}
+            {:else}
+              ∞
+            {/if}
+            <sup class="far fa-question-circle" 
               style="position: absolute; color: var(--white); top: 5px; margin-left: 5px;" 
               on:click={() => COPILOT.set({
                 definition: definitions[$PREFERRED_LANGUAGE].adjustedCollateralizationRatio
@@ -634,14 +681,7 @@
             ? inputAmount === maxInputValue 
               : false}
           class:disabled={disabledInput}
-          on:click={() => {
-            if ($CURRENT_RESERVE && $ASSETS) {
-              maxInputValue
-                ? inputAmount = maxInputValue
-                    : null;
-              submitTrade();
-            }
-          }}>
+          on:click={() => inputAmount = maxInputValue}>
           <span>
             {dictionary[$PREFERRED_LANGUAGE].cockpit.max.toUpperCase()}
           </span>
@@ -649,6 +689,11 @@
         <div class="trade-input flex align-center justify-center"
           class:active={inputAmount} class:disabled={disabledInput}>
           <input on:keyup={() => adjustCollateralizationRatio()}
+            on:keypress={(e) => {
+              if (e.charCode === 13) {
+                checkSubmit();
+              }
+            }}
             on:click={() => inputError = ''}
             bind:value={inputAmount}
             placeholder={inputError ?? ''}
@@ -673,29 +718,12 @@
         <div class="trade-input-btn flex align-center justify-center"
           class:active={sendingTrade}
           class:disabled={disabledInput}
-          on:click={() => {
-            if (!disabledInput) {
-              if (inputAmount && obligation.colRatio > $MARKET.minColRatio && adjustedRatio <= $MARKET.minColRatio) {
-                COPILOT.set({
-                  suggestion: {
-                    good: false,
-                    overview: dictionary[$PREFERRED_LANGUAGE].cockpit.subjectToLiquidation
-                      .replace('{{NEW-C-RATIO}}', currencyFormatter(adjustedRatio * 100, false, 1)),                        
-                    action: {
-                      text: dictionary[$PREFERRED_LANGUAGE].cockpit.confirm,
-                      onClick: () => submitTrade()
-                    }
-                  }
-                });
-              } else {
-                submitTrade();
-              }
-            }
-          }}>
+          on:click={() => checkSubmit()}>
           {#if sendingTrade}
             <Loader button />
           {:else}
-            <i class="jet-icons">
+            <i class="jet-icons"
+              title="Submit Trade">
               ➜
             </i>
           {/if}
@@ -834,10 +862,11 @@
   .trade-disabled-message span {
     font-weight: 400;
     font-size: 12px;
+    padding: var(--spacing-sm);
   }
 
 
-  @media screen and (max-width: 1000px) {
+  @media screen and (max-width: 1100px) {
     .cockpit-top {
       flex-direction: column;
       align-items: flex-start;
@@ -861,9 +890,6 @@
     .trade-action-section {
       width: 100% !important;
       padding: var(--spacing-md) 0;
-    }
-    .trade-action-section span {
-      font-size: 10px
     }
     .trade-action-section p {
       font-size: 25px;

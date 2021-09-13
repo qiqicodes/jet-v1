@@ -8,7 +8,7 @@ import { parsePriceData } from "@pythnetwork/client";
 import type { Asset, AssetStore, IdlMetadata, Market, Reserve } from "../models/JetTypes";
 import { ASSETS, MARKET } from "../store";
 import { getAccountInfoAndSubscribe, getMintInfoAndSubscribe, getTokenAccountAndSubscribe, parseMarketAccount, parseObligationAccount, parseReserveAccount, SOL_DECIMALS, getCcRate, getBorrowRate, getDepositRate } from "./programUtil";
-import { timeout, TokenAmount } from "./utils";
+import { TokenAmount } from "./utils";
 import { MarketReserveInfoList } from "./layout";
 
 let assetStore: AssetStore | null;
@@ -144,8 +144,6 @@ export const subscribeToAssets = async (connection: Connection, coder: anchor.Co
     return;
   }
 
-  await timeout(1000);
-
   // Wallet native SOL balance
   getAccountInfoAndSubscribe(connection, wallet, account => {
     ASSETS.update(asset => {
@@ -157,8 +155,6 @@ export const subscribeToAssets = async (connection: Connection, coder: anchor.Co
       return asset;
     });
   });
-
-  await timeout(1000);
 
   // Obligation
   getAccountInfoAndSubscribe(connection, assetStore.obligationPubkey, account => {
@@ -179,8 +175,6 @@ export const subscribeToAssets = async (connection: Connection, coder: anchor.Co
     const asset = assetStore.tokens[abbrev];
     const reserve = market.reserves[abbrev];
 
-    await timeout(1000);
-
     // Wallet token account
     if (asset.walletTokenPubkey != null) {
       getTokenAccountAndSubscribe(connection, asset.walletTokenPubkey, reserve.decimals, amount => {
@@ -196,8 +190,6 @@ export const subscribeToAssets = async (connection: Connection, coder: anchor.Co
       });
     }
 
-    await timeout(1000);
-
     // Reserve deposit notes
     getTokenAccountAndSubscribe(connection, asset.depositNoteDestPubkey, reserve.decimals, amount => {
       ASSETS.update(asset => {
@@ -210,8 +202,6 @@ export const subscribeToAssets = async (connection: Connection, coder: anchor.Co
         return asset;
       });
     })
-
-    await timeout(1000);
 
     // Deposit notes account
     getTokenAccountAndSubscribe(connection, asset.depositNotePubkey, reserve.decimals, amount => {
@@ -226,8 +216,6 @@ export const subscribeToAssets = async (connection: Connection, coder: anchor.Co
       });
     })
 
-    await timeout(1000);
-
     // Obligation loan notes
     getTokenAccountAndSubscribe(connection, asset.loanNotePubkey, reserve.decimals, amount => {
       ASSETS.update(asset => {
@@ -240,8 +228,6 @@ export const subscribeToAssets = async (connection: Connection, coder: anchor.Co
         return asset;
       })
     })
-
-    await timeout(1000);
 
     // Obligation collateral notes
     getTokenAccountAndSubscribe(connection, asset.collateralNotePubkey, reserve.decimals, amount => {
@@ -264,12 +250,6 @@ const deriveValues = (market: Market, reserve?: Reserve, asset?: Asset) => {
     reserve.utilizationRate = reserve.outstandingDebt.uiAmountFloat / reserve.marketSize.uiAmountFloat;
 
     if(asset) {
-      // Logging to debug exchange rate being too big
-      // if(!asset.collateralNoteBalance.amount.isZero()) {
-      //   console.log("col notes " + asset.collateralNoteBalance.amount.toString());
-      //   console.log("exch rate " + reserve.depositNoteExchangeRate.toString())
-      //   console.log("exp " + Math.pow(10, 15));
-      // }
       asset.depositBalance = asset.depositNoteBalance.mulb(reserve.depositNoteExchangeRate);
       asset.loanBalance = asset.loanNoteBalance.mulb(reserve.loanNoteExchangeRate).divb(new BN(Math.pow(10, 15)));
       asset.collateralBalance = asset.collateralNoteBalance.mulb(reserve.depositNoteExchangeRate).divb(new BN(Math.pow(10, 15)));

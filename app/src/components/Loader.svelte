@@ -68,7 +68,7 @@
   .inner-circle img {
     width: 100%;
     height: auto;
-    animation: rotate 1.5s ease-in-out infinite;
+    animation: rotate 1.25s ease-in-out infinite;
   }
   p {
     font-size: 12px;
@@ -93,7 +93,7 @@
     }
   }
 
-  @media screen and (max-width: 1000px) {
+  @media screen and (max-width: 1100px) {
     .fullscreen {
       height: calc((var(--vh, 1vh) * 100)) !important;
     }

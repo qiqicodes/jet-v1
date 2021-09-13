@@ -145,7 +145,7 @@
     right: -13px;
   }
 
-  @media screen and (max-width: 1000px) {
+  @media screen and (max-width: 1100px) {
     .modal, .reserve-detail {
       width: 100%;
       max-width: unset;

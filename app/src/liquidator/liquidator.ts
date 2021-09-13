@@ -25,15 +25,15 @@ export const scanObligations = async () => {
             console.log(error);
           });
         } catch (error) {
+          console.error(`Liquidator error: ${error}`);
           rollbar.error(`Liquidator error: ${error}`);
-          console.log(error);
         }
       }
       const timeEnd = Date.now();
       console.log(`${accounts.length} scanned in ${(timeEnd - timeStart).toFixed()}ms (getProgramAccounts ${(timeGetAccounts - timeStart).toFixed()}ms)`)
     } catch (error) {
+      console.error(`Liquidator error: ${error}`);
       rollbar.error(`Liquidator error: ${error}`);
-      console.log(error);
     }
     await sleep;
   }

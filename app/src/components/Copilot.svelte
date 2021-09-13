@@ -142,7 +142,7 @@
     max-width: 400px;
   }
 
-  @media screen and (max-width: 1000px) {
+  @media screen and (max-width: 1100px) {
     .copilot {
       flex-direction: column;
     }
