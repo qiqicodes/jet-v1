@@ -661,7 +661,7 @@
           <p class="bicyclette" style={obligation?.borrowedValue ? '' : 'font-size: 30px;'}>
             {#if adjustedRatio > 10}
               &gt; 1000%
-            {:else if adjustedRatio < 10}
+            {:else if  adjustedRatio && adjustedRatio < 10}
               {currencyFormatter(adjustedRatio * 100, false, 1) + '%'}
             {:else}
               ∞
