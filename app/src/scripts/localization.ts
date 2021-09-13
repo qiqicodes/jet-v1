@@ -114,7 +114,6 @@ export const dictionary: any = {
       asset: "Asset",
       detail: "Detail",
       native: "Native",
-
       totalValueLocked: "Locked Market Value",
       totalBorrowed: "Total Borrowed",
       availableLiquidity: "Available Liquidity",
@@ -123,44 +122,39 @@ export const dictionary: any = {
       depositAPY: "Deposit APY",
       borrowAPR: "Borrow APR",
       airdrop: "Airdrop",
-
       totalDepositedValue: "Your Deposited Value",
       totalBorrowedValue: "Your Borrowed Value",
       yourRatio: "Your C-Ratio",
       collateralizationRatio: "Collateralization Ratio",
-
       noInputAmount: "Enter amount.",
       adjustedCollateralization: "Adjusted C-Ratio",
-
       deposit: "Deposit",
       walletBalance: "Wallet Balance",
       noDepositAmount: "Enter amount",
       notEnoughAsset: "Not enough {{ASSET}}.",
-    
       withdraw: "Withdraw",
       availableFunds: "Available Funds",
       lessFunds: "Not enough funds",
-
       borrow: "Borrow",
       maxBorrowAmount: "Maximum Borrow",
       noDeposits: "You must deposit collateral in order to borrow.",
-      assetIsCurrentDeposit: "You've deposited {{ASSET}} and therefore can't borrow it.", 
-      assetIsCurrentBorrow: "You've borrowed {{ASSET}} and therefore can't deposit it.", 
+      assetIsCurrentDeposit: "You've deposited {{ASSET}} and therefore can't borrow it.",
       noLiquidity: "Not enough liquidity.",
       minCRatio: "This will put your position at our minimum collateralization ratio, therefore placing your account in liquidation territory. Are you sure?",
-      belowMinCRatio: "You are under-collateralized. Deposit or repay your debt to avoid liquidation.",
+      belowMinRatio: "You are undercollateralized. Deposit or repay your debt to avoid liquidation.",
       subjectToLiquidation: "This trade lowers your collateralization ratio to {{NEW-C-RATIO}}%, which makes you subject to liquidation. Would you still like to borrow?",
       confirm: "Confirm",
-
       repay: "Repay",
       amountOwed: "Amount Owed",
       oweLess: "You owe less.",
-      max: "Max",
-
       geobanned: "Jet Protocol is not available in your region.",
       noMarket: "We were unable to initialize the Jet marketplace.",
-      txSuccess: "Success! Your {{TRADE ACTION}} of {{AMOUNT AND ASSET}} was received. Check out the transaction on the <a href='{{EXPLORER LINK}}' class='text-gradient' target='_blank' style='margin: unset; font-weight: bold;' style='margin: unset; font-weight: bold;'>explorer</a>.",
-      txFailed: "Transaction failed. Not sure what went wrong, please try again later or contact us."
+      txSuccess: "Success! Your {{TRADE ACTION}} of {{AMOUNT AND ASSET}} was received. Check out the transaction on the <a href='{{EXPLORER LINK}}' class='text-gradient' target='_blank' style='margin: unset; font-weight: bold;'>explorer</a>.",
+      txFailed: "Transaction failed. Not sure what went wrong, please try again later or contact us.",
+      max: "Max",
+      assetIsCurrentBorrow: "You've borrowed {{ASSET}} and therefore can't deposit it.",
+      belowMinCRatio: "You are undercollateralized. Deposit or repay your debt to avoid liquidation.",
+      search: "Search Market.."
     },
     settings: {
       title: "Settings",
@@ -180,7 +174,7 @@ export const dictionary: any = {
       totalBorrowed: "Total Borrowed",
       maximumLTV: "Maximum LTV",
       liquidationPremium: "Liquidation Premium",
-      tradeAsset: "Trade {{ASSET}}",
+      tradeAsset: "Trade {{ASSET}}"
     },
     copilot: {
       name: "Copilot",
@@ -191,20 +185,20 @@ export const dictionary: any = {
           overview: "Your account is unhealthy.",
           detail: "Your Collateralization Ratio (your total deposited value divided by your total borrowed value) is {{C-RATIO}}% which is {{RATIO BELOW AMOUNT}}% less than Jet marketplace's minimum collateralization ratio of {{JET MIN C-RATIO}}%.",
           solution: "In order to correct your position, you can deposit more collateral, but I suggest you repay your debt in the Cockpit.",
-          actionText: "Go To Cockpit",
+          actionText: "Go To Cockpit"
         },
         warning: {
           tenPercent: {
             overview: "You are dangerously close to liquidation.",
             detail: "Your Collateralization Ratio (your total deposited value divided by your total borrowed value) is {{C-RATIO}}% which is within 10% of Jet marketplace's minimum collateralization ratio of {{JET MIN C-RATIO}}%.",
             solution: "In order to avoid liquidation, you can deposit more collateral.",
-            actionText: "Deposit",
+            actionText: "Deposit"
           },
           twentyPercent: {
             overview: "Keep an eye on your collateralization ratio.",
             detail: "Your Collateralization Ratio (your total deposited value divided by your total borrowed value) is {{C-RATIO}}% which is less than 20% above Jet marketplace's minimum collateralization ratio of {{JET MIN C-RATIO}}%.",
             solution: "Raise your collateralization ratio to healthy levels of 20% or more by depositing more collateral.",
-            actionText: "Deposit",
+            actionText: "Deposit"
           }
         },
         deposit: {
@@ -214,13 +208,14 @@ export const dictionary: any = {
         },
         healthy: {
           overview: "Skies are clear.",
-          detail: "Your account is in good standing and is healthily over-collateralized, let me take a look at the market and see if I can suggest some good moves for you. Check back with me later!",
+          detail: "Your account is in good standing and is healthily over-collateralized, let me take a look at the market and see if I can suggest some good moves for you. Check back with me later!"
         }
       },
       alert: {
         failed: "Mayday!",
         success: "Success!",
-        airdropSuccess: "We have Airdropped you {{UI AMOUNT}} {{RESERVE ABBREV}}. Please refresh the app to see your new balance."
+        airdropSuccess: "We have Airdropped you {{UI AMOUNT}} {{RESERVE ABBREV}}. Please refresh the app to see your new balance.",
+        refresh: "Refresh"
       }
     }
   },
@@ -228,8 +223,8 @@ export const dictionary: any = {
   zh: {
     language: "中文",
     loading: {
-      transactions: "交易发送中...",
-      connectingWallet: "钱包连结中..."
+      transactions: "交易发送中。。。",
+      connectingWallet: "钱包连结中。。。"
     },
     nav: {
       cockpit: "驾驶舱",
@@ -241,7 +236,6 @@ export const dictionary: any = {
       asset: "资产",
       detail: "详细",
       native: "原生",
-
       totalValueLocked: "总锁仓量",
       totalBorrowed: "借贷总额",
       availableLiquidity: "可用流动性",
@@ -250,44 +244,39 @@ export const dictionary: any = {
       depositAPY: "存款 APY",
       borrowAPR: "借贷 APR",
       airdrop: "Airdrop",
-
       totalDepositedValue: "存款总价值",
       totalBorrowedValue: "借贷总额",
       yourRatio: "您的质押率",
       collateralizationRatio: "质押率",
-
       noInputAmount: "输入金额",
       adjustedCollateralization: "调整过质押率",
-
       deposit: "存款",
       walletBalance: "你的钱包余额",
       noDepositAmount: "输入金额",
       notEnoughAsset: "{{ASSET}} 不够",
-    
       withdraw: "取款",
       availableFunds: "可用资产",
       lessFunds: "资产不够",
-
       borrow: "借贷",
       maxBorrowAmount: "最高可借贷金额",
       noDeposits: "您需要存抵押物才能再借款",
-      assetIsCurrentDeposit: "您已存入 {{ASSET}}，因此无法借用。", 
-      assetIsCurrentBorrow: "", 
-      noLiquidity: "流动性不足.",
+      assetIsCurrentDeposit: "您已存入 {{ASSET}}，因此无法借用。",
+      noLiquidity: "流动性不足",
       minCRatio: "这将使您的头寸处于我们的最低抵押率，从而使您的账户处于清算区域。 你确定吗？",
-      belowMinCRatio: "您已低于最小质押率。请多存一些抵押物或偿还一些债务",
-      subjectToLiquidation: "您這個交易會降低质押率到 {{NEW-C-RATIO}}% 比Jet 要求的质押率还低 从而使您的账户处于清算区域。 你确定吗？",
+      belowMinRatio: "您已低于最小质押率。请多存一些抵押物或偿还一些债务",
+      subjectToLiquidation: "您这个交易会降低质押率到 {{NEW-C-RATIO}}% 比 Jet 要求的质押率还低 从而使您的账户处于清算区域。你确定吗？",
       confirm: "确认",
-
       repay: "偿还",
       amountOwed: "以借贷金额",
       oweLess: "借贷金额减少",
-      max: '全部',
-
-      geobanned: "您的国家不尊许您用 Jet Protocol.",
+      geobanned: "您住的地方不尊许您用 Jet Protocol。",
       noMarket: "我们没办法开启Jet的交易市场",
-      txSuccess: "成功了! 我们收到您的 {{AMOUNT AND ASSET}} {{TRADE ACTION}}. 您可以在這查看您的交易 <a href='{{EXPLORER LINK}}' class='text-gradient' target='_blank' style='margin: unset; font-weight: bold;'>explorer</a>.",
-      txFailed: "交易失败. 失败原因不太清楚， 请您再试一次或是跟我们联系."
+      txSuccess: "成功了! 我们收到您的 {{AMOUNT AND ASSET}} {{TRADE ACTION}}。您可以在這查看您的交易 <a href='{{EXPLORER LINK}}' class='text-gradient' target='_blank' style='margin: unset; font-weight: bold;'>explorer</a>。",
+      txFailed: "交易失败。失败原因不太清楚， 请您再试一次或是跟我们联系。",
+      max: "全部",
+      assetIsCurrentBorrow: "你已经借了{{ASSET}} 所以无法存入此资产。",
+      belowMinCRatio: "您已低于最小质押率。请多存一些抵押物或偿还一些债务。",
+      search: "搜索市场"
     },
     settings: {
       title: "设定",
@@ -307,47 +296,48 @@ export const dictionary: any = {
       totalBorrowed: "总借贷金额",
       maximumLTV: "最高LTV",
       liquidationPremium: "清算溢价",
-      tradeAsset: "交易 {{ASSET}}",
+      tradeAsset: "交易 {{ASSET}}"
     },
     copilot: {
       name: "副驾驶",
-      header: "嘿 我是你的副驾驶.",
+      header: "嘿 我是你的副驾驶。",
       okay: "Okay",
       suggestions: {
         unhealthy: {
           overview: "您的帐号健康度不良",
-          detail: "您的质押率 {{C-RATIO}}% 比 Jet 要求的质押率还低 {{RATIO BELOW AMOUNT}}%. Jet 要求的最低质押率是 {{JET MIN C-RATIO}}%",
-          solution: "为了更正您的仓位，您可以存入更多的抵押品，但我建议您在 \"驾驶舱\" 中偿还您的债务",
+          detail: "您的质押率 {{C-RATIO}}% 比 Jet 要求的质押率还低 {{RATIO BELOW AMOUNT}}%。Jet 要求的最低质押率是 {{JET MIN C-RATIO}}%",
+          solution: `为了更正您的仓位，您可以存入更多的抵押品，但我建议您在 "驾驶舱" 中偿还您的债务。`,
           actionText: "去驾驶舱"
         },
         warning: {
           tenPercent: {
             overview: "小心 您快被清算了！",
-            detail: "您的质押率 {{C-RATIO}}% 比Jet 要求的质押率还低 10%. Jet 要求的质押率是 {{JET MIN C-RATIO}}%",
+            detail: "您的质押率 {{C-RATIO}}% 比 Jet 要求的质押率还低 10%。Jet 要求的质押率是 {{JET MIN C-RATIO}}%",
             solution: "为了避免您被清算 我建议您多存一点抵押物",
-            actionText: "再存抵押物",
+            actionText: "再存抵押物"
           },
           twentyPercent: {
             overview: "注意您的质押率！",
-            detail: "您的质押率 {{C-RATIO}}% 比Jet 要求的质押率还低 20%. Jet 要求的质押率是 {{JET MIN C-RATIO}}%",
+            detail: "您的质押率 {{C-RATIO}}% 比 Jet 要求的质押率还低 20%。Jet 要求的质押率是 {{JET MIN C-RATIO}}%",
             solution: "多存一点抵押物来增加你的质押率，将您的质押率提高到 20% 或更高的健康水平",
-            actionText: "再存抵押物",
+            actionText: "再存抵押物"
           }
         },
         deposit: {
           overview: "{{BEST DEPOSIT APY NAME}} 看起来不错",
-          detail: "<b class='bold'>{{BEST DEPOSIT APY ABBREV}}</b> 现在有市场上最高的 <b class='bold'>APY (Annual Percentage Yield)</b>. 您的帐号健康度不错 我建议您多存一点您的 <b class='bold'>{{USER BALANCE}} {{BEST DEPOSIT APY ABBREV}}</b>.",
+          detail: "<b class='bold'>{{BEST DEPOSIT APY ABBREV}}</b> 现在有市场上最高的 <b class='bold'>APY (Annual Percentage Yield)</b>。您的帐号健康度不错 我建议您多存一点您的 <b class='bold'>{{USER BALANCE}} {{BEST DEPOSIT APY ABBREV}}</b>。",
           actionText: "再存抵押物"
         },
         healthy: {
-          overview: "现在起飞的天气蛮晴朗的",
-          detail: "您的帐号现在健康度不错 我去看看现在的市场 看可不可您做几个建议",
-        },
+          overview: "天气晴朗",
+          detail: "您的帐号现在健康度不错 我去看看现在的市场 看可不可您做几个建议"
+        }
       },
       alert: {
         failed: "失败了!",
         success: "成功了!",
-        airdropSuccess: "We have Airdropped you {{UI AMOUNT}} {{RESERVE ABBREV}}. Please refresh the app to see your new balance."
+        airdropSuccess: "我们已经寄给您 {{AMOUNT}} {{RESERVE ABBREV}}。请更新您到网页。",
+        refresh: "更新网页"
       }
     }
   },
@@ -393,20 +383,22 @@ export const dictionary: any = {
       maxBorrowAmount: "Максимальный займ",
       noDeposits: "Вы должны предоставить залог, чтобы вы могли занять.",
       assetIsCurrentDeposit: "Вы предоставили {{ASSET}} и вы не можете занять его же.",
-      assetIsCurrentBorrow: "", 
       noLiquidity: "Недостаточно ликвидности.",
       minCRatio: "Это действие приведёт к тому, что ваша позиция достигнет минимума коэффициента обеспечения, и ваш счёт может быть подвергнут ликвидации. Вы уверены?",
-      belowMinCRatio: "У вас недостаточно средств в залоге. Пополните залог или верните долг чтобы избежать ликвидации.",
+      belowMinRatio: "У вас недостаточно средств в залоге. Пополните залог или верните долг чтобы избежать ликвидации.",
       subjectToLiquidation: "Эта сделка понизит ваш коэффициент обеспечения до {{NEW-C-RATIO}}%, после чего ваш счёт может быть подвергнут ликвидации. Вы всё-равно хотите занять?",
       confirm: "Подтвердить",
       repay: "Вернуть",
       amountOwed: "Сумма долга",
       oweLess: "Вы должны меньше.",
-      max: "Max",
       geobanned: "Jet протокол не доступен в вашем регионе.",
       noMarket: "Торговая площадка Jet не смогла запуститься.",
       txSuccess: "Успез! Ваш(а) {{TRADE ACTION}} на {{AMOUNT AND ASSET}} получен(а). Проверить транзакцию в <a href='{{EXPLORER LINK}}' class='text-gradient' target='_blank' style='margin: unset; font-weight: bold;'>обозревателе</a>.",
-      txFailed: "Транзакция не прошла. Мы не уверены, что пошло не так. Попробуйте еще раз позже или свяжитесь с нами."
+      txFailed: "Транзакция не прошла. Мы не уверены, что пошло не так. Попробуйте еще раз позже или свяжитесь с нами.",
+      max: "Max",
+      assetIsCurrentBorrow: "You've borrowed {{ASSET}} and therefore can't deposit it.",
+      belowMinCRatio: "У вас недостаточно средств в залоге. Пополните залог или верните долг чтобы избежать ликвидации.",
+      search: "Search Market..."
     },
     settings: {
       title: "Настройки",
@@ -435,7 +427,7 @@ export const dictionary: any = {
       suggestions: {
         unhealthy: {
           overview: "Ваш счёт нездоров.",
-          detail: "Ваш коэффициент обеспечения (сумма вашего залога поделённая на сумму ваших займов) сейчас {{C-RATIO}}%, что на {{RATIO BELOW AMOUNT}} меньше, чем минимальный КО {{JET MIN C-RATIO}}% на торговой площадке Jet.",
+          detail: "Ваш коэффициент обеспечения (сумма вашего залога поделённая на сумму ваших займов) сейчас {{C-RATIO}}%, что на {{RATIO BELOW AMOUNT}}% меньше, чем минимальный КО {{JET MIN C-RATIO}}% на торговой площадке Jet.",
           solution: "Чтобы исправить ваше положение, вы можете внести больше залога, но я вам рекомендую лучше вернуть долг в Кабине.",
           actionText: "Перейти в Кабину"
         },
@@ -466,13 +458,14 @@ export const dictionary: any = {
       alert: {
         failed: "Неудача!",
         success: "Успех!",
-        airdropSuccess: "We have Airdropped you {{UI AMOUNT}} {{RESERVE ABBREV}}. Please refresh the app to see your new balance."
+        airdropSuccess: "We have Airdropped you {{UI AMOUNT}} {{RESERVE ABBREV}}. Please refresh the app to see your new balance.",
+        refresh: "Refresh"
       }
     }
   },
   //Turkish
   tr: {
-    language: "Türk",
+    language: "Türkçe",
     loading: {
       transactions: "İşleminiz yapılıyor...",
       connectingWallet: "Cüzdan bağlanıyor..."
@@ -505,17 +498,16 @@ export const dictionary: any = {
       walletBalance: "Cüzdan Bakiyesi",
       noDepositAmount: "Miktarı girin",
       notEnoughAsset: "Yeterli {{ASSET}} yok.",
-      withdraw: "Tazmin et",
+      withdraw: "Çek",
       availableFunds: "Kullanılabilir Fonlar",
       lessFunds: "Yeterli fon yok",
       borrow: "Borç al",
       maxBorrowAmount: "Maksimum Borç",
       noDeposits: "Ödünç almak için teminat yatırmanız gerekiyor.",
-      assetIsCurrentDeposit: "{{ASSET}} <br> yatırdınız ve bu nedenle ödünç alamazsınız.",
-      assetIsCurrentBorrow: "", 
+      assetIsCurrentDeposit: "{{ASSET}} yatırdınız ve bu nedenle ödünç alamazsınız.",
       noLiquidity: "Yeterli likidite yok.",
       minCRatio: "Bu işlem pozisyonunuzu minimum teminat oranına alacaktır dolayısıyla hesabınızı likidasyon bölgesine çekeceksiniz.Bu işlemi yapmayı istediğinize emin misiniz?",
-      belowMinCRatio: "Teminatsızsınız. Likidasyondan kaçınmak için para yatırın veya borcunuzu geri ödeyin.",
+      belowMinRatio: "Teminatsızsınız. Likidasyondan kaçınmak için para yatırın veya borcunuzu geri ödeyin.",
       subjectToLiquidation: "Bu işlem, likidasyon oranınızı %{{NEW-C-RATIO}} 'ya düşürür ve bu da sizi likidasyona tabi kılar. yine de ödünç almak ister misin?",
       confirm: "Onayla",
       repay: "Geri öde",
@@ -523,9 +515,12 @@ export const dictionary: any = {
       oweLess: "Daha az borçlusun.",
       geobanned: "Jet Protokolü bölgenizde kullanılamıyor.",
       noMarket: "Jet pazaryerini başlatamadık.",
-      txSuccess: "Başarılı! {{TRADE ACTION}} tutarındaki {{AMOUNT AND ASSET}} alındı. <br> <a href='{{EXPLORER LINK}}' class='text-gradient'>explorer</a>'daki işleme göz atın.",
+      txSuccess: "Başarılı! {{TRADE ACTION}} tutarındaki {{AMOUNT AND ASSET}} alındı. <a href='{{EXPLORER LINK}}' class='text-gradient' target='_blank' style='margin: unset; font-weight: bold;'>explorer</a>'daki işleme göz atın.",
       txFailed: "İşlem başarısız. Neyin yanlış gittiğinden emin değilim, lütfen daha sonra tekrar deneyin veya bizimle iletişime geçin.",
-      max: "Maks"
+      max: "Maks",
+      assetIsCurrentBorrow: "{{ASSET}} ödünç aldınız ve bu nedenle yatıramazsınız.",
+      belowMinCRatio: "Teminatsızsınız. Likidasyondan kaçınmak için para yatırın veya borcunuzu geri ödeyin.",
+      search: "Pazar arama.."
     },
     settings: {
       title: "Ayarlar",
@@ -585,7 +580,8 @@ export const dictionary: any = {
       alert: {
         failed: "Ses ses!",
         success: "Başarılı!",
-        airdropSuccess: "We have Airdropped you {{UI AMOUNT}} {{RESERVE ABBREV}}. Please refresh the app to see your new balance."
+        airdropSuccess: "Size {{UI AMOUNT}} {{RESERVE ABBREV}} Airdrop'la gönderdik. Yeni bakiyenizi görmek için lütfen uygulamayı yenileyin.",
+        refresh: "Yenile"
       }
     }
   }
