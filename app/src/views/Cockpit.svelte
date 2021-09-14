@@ -678,10 +678,13 @@
       <div class="trade-action-section flex align-center justify-center">
         <div class="max-input"
           class:active={maxInputValue 
-            ? inputAmount === maxInputValue 
+            ? inputAmount === maxInputValue
               : false}
           class:disabled={disabledInput}
-          on:click={() => inputAmount = maxInputValue}>
+          on:click={() => {
+            inputAmount = maxInputValue;
+            adjustCollateralizationRatio();
+          }}>
           <span>
             {dictionary[$PREFERRED_LANGUAGE].cockpit.max.toUpperCase()}
           </span>
