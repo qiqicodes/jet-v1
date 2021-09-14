@@ -34,10 +34,12 @@
         <h1 class="bicyclette modal-section text-gradient">
           {dictionary[$PREFERRED_LANGUAGE].copilot.header}
         </h1>
-        <h2 class="bicyclette modal-section" 
-          style={$COPILOT.suggestion.good ? 'color: var(--jet-blue);' : 'color: var(--failure);'}>
-          {$COPILOT.suggestion.overview}
-        </h2>
+        {#if $COPILOT.suggestion.overview}
+          <h2 class="bicyclette modal-section" 
+            style={$COPILOT.suggestion.good ? 'color: var(--jet-blue);' : 'color: var(--failure);'}>
+            {$COPILOT.suggestion.overview}
+          </h2>
+        {/if}
         {#if $COPILOT.suggestion.detail}
           <span class="modal-section">
             {@html $COPILOT.suggestion.detail}

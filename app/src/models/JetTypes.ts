@@ -287,7 +287,7 @@ export interface Copilot {
 };
 interface CopilotSuggestion {
   good: boolean,
-  overview: string,
+  overview?: string,
   detail?: string,
   solution?: string,
   action?: {

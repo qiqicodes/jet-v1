@@ -234,11 +234,11 @@
   // Check scenario and submit trade
   const checkSubmit = () => {
     if (!disabledInput) {
-      if (inputAmount && obligation.colRatio > $MARKET.minColRatio && adjustedRatio <= $MARKET.minColRatio) {
+      if (inputAmount && adjustedRatio <= $MARKET.minColRatio) {
         COPILOT.set({
           suggestion: {
             good: false,
-            overview: dictionary[$PREFERRED_LANGUAGE].cockpit.subjectToLiquidation
+            detail: dictionary[$PREFERRED_LANGUAGE].cockpit.subjectToLiquidation
               .replace('{{NEW-C-RATIO}}', currencyFormatter(adjustedRatio * 100, false, 1)),                        
             action: {
               text: dictionary[$PREFERRED_LANGUAGE].cockpit.confirm,
@@ -354,7 +354,6 @@
             .replaceAll('{{EXPLORER LINK}}', explorerUrl(txid))
         }
       });
-      updateValues();
       inputAmount = null;
     } else if (!ok && !txid) {
       COPILOT.set({
@@ -367,6 +366,8 @@
       inputAmount = null;
     }
 
+    updateValues();
+    adjustCollateralizationRatio();
     sendingTrade = false;
     return;
   };
@@ -663,10 +664,10 @@
           <span>
             {dictionary[$PREFERRED_LANGUAGE].cockpit.adjustedCollateralization.toUpperCase()}
           </span>
-          <p class="bicyclette" style={obligation?.borrowedValue ? '' : 'font-size: 30px;'}>
-            {#if (obligation?.borrowedValue || $TRADE_ACTION === 'borrow') && adjustedRatio > 10}
+          <p class="bicyclette">
+            {#if (obligation?.borrowedValue || ($TRADE_ACTION === 'borrow' && inputAmount)) && adjustedRatio > 10}
               &gt; 1000%
-            {:else if (obligation?.borrowedValue || $TRADE_ACTION === 'borrow') && adjustedRatio < 10}
+            {:else if (obligation?.borrowedValue || ($TRADE_ACTION === 'borrow' && inputAmount)) && adjustedRatio < 10}
               {currencyFormatter(adjustedRatio * 100, false, 1) + '%'}
             {:else}
               ∞
