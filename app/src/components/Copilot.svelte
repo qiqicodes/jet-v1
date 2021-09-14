@@ -1,11 +1,20 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { COPILOT, PREFERRED_LANGUAGE } from '../store';
   import { dictionary } from '../scripts/localization';
   import Button from '../components/Button.svelte';
+
+  onMount(() => {
+    document.addEventListener('keypress', (e) => {
+      if (e.code === 'Escape' || e.code === 'Enter') {
+        COPILOT.set(null);
+      }
+    });
+  });
 </script>
 
 {#if $COPILOT}
-  <div class="modal-bg flex align-center justify-center" 
+  <div class="modal-bg flex align-center justify-center"
     on:click={() => COPILOT.set(null)}>
   </div>
   <div class="copilot modal flex align-center justify-center">

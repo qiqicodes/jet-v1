@@ -528,7 +528,7 @@ const interpolate = (x: number, x0: number, x1: number, y0: number, y1: number):
 
 /** Continuous Compounding Rate 
 */
-export const getCcRate = (reserveConfig: ReserveConfigStruct, outstandingDebt: number, vaultTotal: number): number => {
+export const getCcRate = (reserveConfig: ReserveConfigStruct, outstandingDebt: number, vaultTotal: number, utilRate: number): number => {
   const basisPointFactor = 10000;
   let util1 = reserveConfig.utilizationRate1 / basisPointFactor;
   let util2 = reserveConfig.utilizationRate2 / basisPointFactor;
@@ -536,11 +536,8 @@ export const getCcRate = (reserveConfig: ReserveConfigStruct, outstandingDebt: n
   let borrow1 = reserveConfig.borrowRate1 / basisPointFactor;
   let borrow2 = reserveConfig.borrowRate2 / basisPointFactor;
   let borrow3 = reserveConfig.borrowRate3 / basisPointFactor;
-  let utilRate = outstandingDebt / (outstandingDebt + vaultTotal);
 
-  if (vaultTotal === 0) {
-    return borrow1;
-  } else if (utilRate <= util1) {
+  if (utilRate <= util1) {
     return interpolate(utilRate, 0, util1, borrow0, borrow1);
   } else if (utilRate <= util2) {
     return interpolate(utilRate, util1, util2, borrow1, borrow2);

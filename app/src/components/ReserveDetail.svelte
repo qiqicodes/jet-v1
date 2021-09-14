@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import type { Reserve } from '../models/JetTypes';
   import { COPILOT, CURRENT_RESERVE, PREFERRED_LANGUAGE } from '../store';
   import { currencyFormatter, } from '../scripts/utils';
@@ -9,6 +10,14 @@
   export let reserveDetail: Reserve;
   export let updateValues: Function;
   export let closeReserveDetail: Function;
+
+  onMount(() => {
+    document.addEventListener('keypress', (e) => {
+      if (e.code === 'Escape' || e.code === 'Enter') {
+        closeReserveDetail();
+      }
+    });
+  });
 </script>
 
 {#if reserveDetail}
@@ -78,11 +87,11 @@
       <div class="modal-detail flex align-center justify-center column">
         <span>
           {dictionary[$PREFERRED_LANGUAGE].reserveDetail.maximumLTV.toUpperCase()}
-          <sup class="far fa-question-circle"
+          <i class="info far fa-question-circle"
             on:click={() => COPILOT.set({
               definition: definitions[$PREFERRED_LANGUAGE].maximumLtv
             })}>
-          </sup>
+          </i>
         </span>
         <p>
           {reserveDetail.maximumLTV / 100}%
@@ -91,11 +100,11 @@
       <div class="modal-detail flex align-center justify-center column">
         <span>
           {dictionary[$PREFERRED_LANGUAGE].reserveDetail.liquidationPremium.toUpperCase()}
-          <sup on:click={() => COPILOT.set({
+          <i on:click={() => COPILOT.set({
             definition: definitions[$PREFERRED_LANGUAGE].liquidationPremium
           })} 
-            class="far fa-question-circle">
-          </sup>
+            class="info far fa-question-circle">
+          </i>
         </span>
         <p>
           {reserveDetail.liquidationPremium / 100}%
@@ -134,15 +143,14 @@
     height: 12px;
     margin: 2.5px var(--spacing-sm);
   }
+  .info {
+    position: absolute;
+    top: -2px;
+  }
   img {
     width: 40px;
     height: 40px;
     padding: 0 var(--spacing-sm);
-  }
-  sup {
-    position: absolute;
-    top: 2px;
-    right: -13px;
   }
 
   @media screen and (max-width: 1100px) {

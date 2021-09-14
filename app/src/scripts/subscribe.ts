@@ -52,15 +52,17 @@ export const subscribeToMarket = (idlMeta: IdlMetadata, connection: anchor.web3.
           market.minColRatio = decoded.config.minCollateralRatio / 10000;
 
           const reserve = market.reserves[reserveMeta.abbrev];
+
+          deriveValues(market, reserve, assetStore?.tokens[reserveMeta.abbrev]);
+
+          const ccRate = getCcRate(decoded.config, reserve.outstandingDebt.uiAmountFloat, reserve.marketSize.uiAmountFloat, reserve.utilizationRate);
+
           reserve.maximumLTV = decoded.config.minCollateralRatio;
           reserve.liquidationPremium = decoded.config.liquidationPremium;
           reserve.outstandingDebt = new TokenAmount(new BN(decoded.state.oustandingDebt), reserveMeta.decimals);
           reserve.accruedUntil = decoded.accruedUntil;
-          const ccRate = getCcRate(decoded.config, reserve.outstandingDebt.uiAmountFloat, reserve.marketSize.uiAmountFloat);
           reserve.borrowAPR = getBorrowRate(ccRate, decoded.config.manageFeeRate);
           reserve.depositAPY = getDepositRate(ccRate, reserve.utilizationRate);
-
-          deriveValues(market, reserve, assetStore?.tokens[reserveMeta.abbrev]);
 
           return market;
         })
@@ -245,7 +247,9 @@ export const subscribeToAssets = async (connection: Connection, coder: anchor.Co
 const deriveValues = (market: Market, reserve?: Reserve, asset?: Asset) => {
   if (reserve) {
     reserve.marketSize = reserve.outstandingDebt.add(reserve.availableLiquidity);
-    reserve.utilizationRate = reserve.outstandingDebt.uiAmountFloat / reserve.marketSize.uiAmountFloat;
+    reserve.utilizationRate = !reserve.marketSize.amount.isZero() 
+      ? reserve.outstandingDebt.uiAmountFloat / reserve.marketSize.uiAmountFloat
+        : 0;
 
     if (asset) {
       asset.depositBalance = asset.depositNoteBalance.mulb(reserve.depositNoteExchangeRate);
