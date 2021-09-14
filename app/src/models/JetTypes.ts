@@ -247,7 +247,7 @@ export interface AssetStore {
 };
 export interface Asset {
   tokenMintPubkey: PublicKey,
-  walletTokenPubkey?: PublicKey,
+  walletTokenPubkey: PublicKey,
   walletTokenExists: boolean,
   walletTokenBalance: TokenAmount,
   depositNotePubkey: PublicKey,

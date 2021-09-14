@@ -87,7 +87,7 @@ export const subscribeToMarket = (idlMeta: IdlMetadata, connection: anchor.web3.
         MARKET.update(market => {
           let reserve = market.reserves[reserveMeta.abbrev];
           reserve.loanNoteMint = amount;
-          
+
           deriveValues(market, reserve, assetStore?.tokens[reserveMeta.abbrev]);
 
           return market;
@@ -101,7 +101,7 @@ export const subscribeToMarket = (idlMeta: IdlMetadata, connection: anchor.web3.
         MARKET.update(market => {
           let reserve = market.reserves[reserveMeta.abbrev];
           reserve.availableLiquidity = amount;
-          
+
           deriveValues(market, reserve, assetStore?.tokens[reserveMeta.abbrev]);
 
           return market;
@@ -115,7 +115,7 @@ export const subscribeToMarket = (idlMeta: IdlMetadata, connection: anchor.web3.
         MARKET.update(market => {
           let reserve = market.reserves[reserveMeta.abbrev];
           reserve.tokenMint = amount;
-          
+
           deriveValues(market, reserve, assetStore?.tokens[reserveMeta.abbrev]);
 
           return market;
@@ -129,9 +129,9 @@ export const subscribeToMarket = (idlMeta: IdlMetadata, connection: anchor.web3.
         MARKET.update(market => {
           let reserve = market.reserves[reserveMeta.abbrev];
           reserve.price = parsePriceData(account.data).price;
-          
+
           deriveValues(market, reserve, assetStore?.tokens[reserveMeta.abbrev]);
-          
+
           return market;
         });
       }
@@ -176,19 +176,17 @@ export const subscribeToAssets = async (connection: Connection, coder: anchor.Co
     const reserve = market.reserves[abbrev];
 
     // Wallet token account
-    if (asset.walletTokenPubkey != null) {
-      getTokenAccountAndSubscribe(connection, asset.walletTokenPubkey, reserve.decimals, amount => {
-        ASSETS.update(asset => {
-          if (asset) {
-            asset.tokens[reserve.abbrev].walletTokenBalance = amount ?? new TokenAmount(new BN(0), reserve.decimals);
-            asset.tokens[reserve.abbrev].walletTokenExists = !!amount;
-          
-            deriveValues(market, market.reserves[reserve.abbrev], asset.tokens[reserve.abbrev]);
-          }
-          return asset;
-        });
+    getTokenAccountAndSubscribe(connection, asset.walletTokenPubkey, reserve.decimals, amount => {
+      ASSETS.update(asset => {
+        if (asset) {
+          asset.tokens[reserve.abbrev].walletTokenBalance = amount ?? new TokenAmount(new BN(0), reserve.decimals);
+          asset.tokens[reserve.abbrev].walletTokenExists = !!amount;
+
+          deriveValues(market, market.reserves[reserve.abbrev], asset.tokens[reserve.abbrev]);
+        }
+        return asset;
       });
-    }
+    });
 
     // Reserve deposit notes
     getTokenAccountAndSubscribe(connection, asset.depositNoteDestPubkey, reserve.decimals, amount => {
@@ -209,7 +207,7 @@ export const subscribeToAssets = async (connection: Connection, coder: anchor.Co
         if (asset) {
           asset.tokens[reserve.abbrev].depositNoteBalance = amount ?? TokenAmount.zero(reserve.decimals);
           asset.tokens[reserve.abbrev].depositNoteExists = !!amount;
-          
+
           deriveValues(market, market.reserves[reserve.abbrev], asset.tokens[reserve.abbrev]);
         }
         return asset;
@@ -222,7 +220,7 @@ export const subscribeToAssets = async (connection: Connection, coder: anchor.Co
         if (asset) {
           asset.tokens[reserve.abbrev].loanNoteBalance = amount ?? TokenAmount.zero(reserve.decimals);
           asset.tokens[reserve.abbrev].loanNoteExists = !!amount;
-          
+
           deriveValues(market, market.reserves[reserve.abbrev], asset.tokens[reserve.abbrev]);
         }
         return asset;
@@ -235,7 +233,7 @@ export const subscribeToAssets = async (connection: Connection, coder: anchor.Co
         if (asset) {
           asset.tokens[reserve.abbrev].collateralNoteBalance = amount ?? TokenAmount.zero(reserve.decimals);
           asset.tokens[reserve.abbrev].collateralNoteExists = !!amount;
-          
+
           deriveValues(market, market.reserves[reserve.abbrev], asset.tokens[reserve.abbrev]);
         }
         return asset;
@@ -245,11 +243,11 @@ export const subscribeToAssets = async (connection: Connection, coder: anchor.Co
 };
 
 const deriveValues = (market: Market, reserve?: Reserve, asset?: Asset) => {
-  if(reserve) {
+  if (reserve) {
     reserve.marketSize = reserve.outstandingDebt.add(reserve.availableLiquidity);
     reserve.utilizationRate = reserve.outstandingDebt.uiAmountFloat / reserve.marketSize.uiAmountFloat;
 
-    if(asset) {
+    if (asset) {
       asset.depositBalance = asset.depositNoteBalance.mulb(reserve.depositNoteExchangeRate);
       asset.loanBalance = asset.loanNoteBalance.mulb(reserve.loanNoteExchangeRate).divb(new BN(Math.pow(10, 15)));
       asset.collateralBalance = asset.collateralNoteBalance.mulb(reserve.depositNoteExchangeRate).divb(new BN(Math.pow(10, 15)));
