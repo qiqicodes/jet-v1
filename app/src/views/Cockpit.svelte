@@ -47,7 +47,7 @@
       searchInput: true
     },
     labels: {
-        search: 'Search Market...',    
+        search: dictionary[$PREFERRED_LANGUAGE].cockpit.search,    
     }
   };
 
@@ -66,11 +66,7 @@
           header: dictionary[$PREFERRED_LANGUAGE].copilot.alert.success,
           text:  dictionary[$PREFERRED_LANGUAGE].copilot.alert.airdropSuccess
             .replace('{{UI AMOUNT}}', amount.uiAmount)
-            .replace('{{RESERVE ABBREV}}', reserve.abbrev),
-          action: {
-            text: 'Refresh',
-            onClick: () => window.location.reload()
-          }
+            .replace('{{RESERVE ABBREV}}', reserve.abbrev)
         }
       });
     } else if (!ok && !txid) {
@@ -285,8 +281,7 @@
 
       inputError = '';
       const depositLamports = TokenAmount.tokens(tradeAmountString, $CURRENT_RESERVE.decimals).amount;
-      const depositAmount = Amount.tokens(depositLamports);
-      [ok, txid] = await deposit($CURRENT_RESERVE.abbrev, depositAmount);
+      [ok, txid] = await deposit($CURRENT_RESERVE.abbrev, depositLamports);
     } else if ($TRADE_ACTION === 'withdraw') {
       if (TokenAmount.tokens(tradeAmountString, $CURRENT_RESERVE.decimals).amount.gt($CURRENT_RESERVE.availableLiquidity.amount)) {
         inputAmount = null;
@@ -344,10 +339,7 @@
 
       inputError = '';
       const repayLamports = TokenAmount.tokens(inputAmount.toString(), $CURRENT_RESERVE.decimals);
-      const repayAmount = inputAmount === loanBalances[$CURRENT_RESERVE.abbrev] ?
-        Amount.loanNotes($ASSETS.tokens[$CURRENT_RESERVE.abbrev].loanNoteBalance.amount) :
-        Amount.tokens(repayLamports.amount);
-      [ok, txid] = await repay($CURRENT_RESERVE.abbrev, repayAmount);
+      [ok, txid] = await repay($CURRENT_RESERVE.abbrev, repayLamports.amount);
     }
     
     
@@ -359,7 +351,7 @@
           text: dictionary[$PREFERRED_LANGUAGE].cockpit.txSuccess
             .replace('{{TRADE ACTION}}', $TRADE_ACTION)
             .replace('{{AMOUNT AND ASSET}}', `${inputAmount} ${$CURRENT_RESERVE.abbrev}`)
-            .replaceAll('{{EXPLORER LINK}}', explorerUrl('transaction', txid, inDevelopment ? 'devnet' : undefined))
+            .replaceAll('{{EXPLORER LINK}}', explorerUrl(txid))
         }
       });
       updateValues();
@@ -681,7 +673,10 @@
             ? inputAmount === maxInputValue 
               : false}
           class:disabled={disabledInput}
-          on:click={() => inputAmount = maxInputValue}>
+          on:click={() => {
+            inputAmount = maxInputValue;
+            adjustCollateralizationRatio();
+          }}>
           <span>
             {dictionary[$PREFERRED_LANGUAGE].cockpit.max.toUpperCase()}
           </span>
