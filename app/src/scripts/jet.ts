@@ -1,7 +1,7 @@
-import { AccountInfo, Keypair, PublicKey, Signer, SystemProgram, SYSVAR_RENT_PUBKEY, TransactionInstruction } from '@solana/web3.js';
+import { Keypair, PublicKey, Signer, SystemProgram, SYSVAR_RENT_PUBKEY, TransactionInstruction } from '@solana/web3.js';
 import * as anchor from '@project-serum/anchor';
 import { BN } from '@project-serum/anchor';
-import { NATIVE_MINT } from "@solana/spl-token";
+import { ASSOCIATED_TOKEN_PROGRAM_ID, NATIVE_MINT } from "@solana/spl-token";
 import { AccountLayout as TokenAccountLayout, Token, TOKEN_PROGRAM_ID, u64 } from "@solana/spl-token";
 import Rollbar from 'rollbar';
 import { initializeApp } from 'firebase/app';
@@ -10,15 +10,13 @@ import WalletAdapter from './walletAdapter';
 import type { Reserve, AssetStore, SolWindow, WalletProvider, Wallet, Asset, Market, Reserves, MathWallet, SolongWallet } from '../models/JetTypes';
 import { MARKET, WALLET, ASSETS, PROGRAM, CURRENT_RESERVE } from '../store';
 import { subscribeToAssets, subscribeToMarket } from './subscribe';
-import { findDepositNoteAddress, findDepositNoteDestAddress, findLoanNoteAddress, findObligationAddress, sendTransaction, transactionErrorToString, parseTokenAccount, findCollateralAddress, SOL_DECIMALS, parseIdlMetadata, sendAllTransactions } from './programUtil';
+import { findDepositNoteAddress, findDepositNoteDestAddress, findLoanNoteAddress, findObligationAddress, sendTransaction, transactionErrorToString, findCollateralAddress, SOL_DECIMALS, parseIdlMetadata, sendAllTransactions, InstructionAndSigner } from './programUtil';
 import { Amount, TokenAmount } from './utils';
 import { Buffer } from 'buffer';
 
 const SECONDS_PER_HOUR: BN = new BN(3600);
-const SECONDS_PER_6H: BN = SECONDS_PER_HOUR.muln(6);
 const SECONDS_PER_DAY: BN = SECONDS_PER_HOUR.muln(24);
 const SECONDS_PER_WEEK: BN = SECONDS_PER_DAY.muln(7);
-const SECONDS_PER_YEAR: BN = new BN(31_536_000);
 const MAX_ACCRUAL_SECONDS: BN = SECONDS_PER_WEEK;
 
 const FAUCET_PROGRAM_ID = new PublicKey(
@@ -185,12 +183,10 @@ export const getWalletAndAnchor = async (provider: WalletProvider): Promise<void
   // Check for newly created token accounts on interval
   if (wallet.name === 'Math Wallet' || wallet.name === 'Solong') {
     await getAssetPubkeys();
-    await findWalletTokenAccounts();
     await subscribeToAssets(connection, coder, wallet.publicKey);
   } else {
     wallet.on('connect', async () => {
       await getAssetPubkeys();
-      await findWalletTokenAccounts();
       await subscribeToAssets(connection, coder, wallet.publicKey);
     });
     wallet.connect();
@@ -224,6 +220,7 @@ const getAssetPubkeys = async (): Promise<void> => {
 
     let asset: Asset = {
       tokenMintPubkey,
+      walletTokenPubkey: await Token.getAssociatedTokenAddress(ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, tokenMintPubkey, wallet.publicKey),
       walletTokenExists: false,
       walletTokenBalance: TokenAmount.zero(reserve.decimals),
       depositNotePubkey,
@@ -246,24 +243,6 @@ const getAssetPubkeys = async (): Promise<void> => {
       collateralNoteBalance: TokenAmount.zero(reserve.decimals),
       collateralBalance: TokenAmount.zero(reserve.decimals),
     };
-    assetStore.tokens[assetAbbrev] = asset;
-
-    let accounts: {
-      pubkey: PublicKey;
-      account: AccountInfo<Buffer>;
-    }[] | undefined;
-    try {
-      accounts = (await connection.getTokenAccountsByOwner(wallet.publicKey, { mint: tokenMintPubkey })).value;
-    } catch (e) { }
-
-    if (accounts?.length && assetStore) {
-      // Get the first token account found
-      // We will want something more sophisticated,
-      // where the user selects their active account
-      asset.walletTokenPubkey = accounts[0].pubkey
-      const tokenAccount = parseTokenAccount(accounts[0].account, accounts[0].pubkey).data;
-      asset.walletTokenBalance = TokenAmount.tokenAccount(tokenAccount, reserve.decimals);
-    }
 
     // Set asset
     assetStore.tokens[assetAbbrev] = asset;
@@ -271,36 +250,14 @@ const getAssetPubkeys = async (): Promise<void> => {
   }
 };
 
-const findWalletTokenAccounts = async () => {
-  for (const assetAbbrev in market.reserves) {
-    let reserve = market.reserves[assetAbbrev];
-    let tokenMintPubkey = reserve.tokenMintPubkey;
-    let asset = assets?.tokens[assetAbbrev];
-
-    let accounts: {
-      pubkey: PublicKey;
-      account: AccountInfo<Buffer>;
-    }[] | undefined;
-    try {
-      accounts = (await connection.getTokenAccountsByOwner(wallet.publicKey, { mint: tokenMintPubkey })).value;
-    } catch (e) { }
-
-    // If there are accounts (we'll end up taking the first),
-    // and no current walletTokenPubkey for this asset, store it
-    if (accounts?.length && asset && !asset.walletTokenPubkey) {
-      asset.walletTokenPubkey = accounts[0].pubkey;
-    }
-  }
-};
-
 // Deposit
-export const deposit = async (abbrev: string, amount: Amount)
+export const deposit = async (abbrev: string, lamports: BN)
   : Promise<[ok: boolean, txid: string | undefined]> => {
   if (!assets || !program) {
     return [false, undefined];
   }
 
-  const [ok, txid] = await refreshOldReserve(abbrev);
+  const [ok, txid] = await refreshOldReserves();
   if (!ok) {
     return [false, txid]
   }
@@ -308,12 +265,6 @@ export const deposit = async (abbrev: string, amount: Amount)
   let reserve = market.reserves[abbrev];
   let asset = assets.tokens[abbrev];
   let depositSourcePubkey = asset.walletTokenPubkey;
-
-  if (buildRefreshReserveIxs(abbrev).length > 3) {
-    console.log("Can not open more than 3 positions")
-    return [false, undefined];
-  }
-
 
   // Optional signers
   let depositSourceKeypair: Keypair | undefined;
@@ -331,24 +282,18 @@ export const deposit = async (abbrev: string, amount: Amount)
 
   // When handling SOL, ignore existing wsol accounts and initialize a new wrapped sol account
   if (asset.tokenMintPubkey.equals(NATIVE_MINT)) {
-
     // Overwrite the deposit source
     // The app will always wrap native sol, ignoring any existing wsol
     depositSourceKeypair = Keypair.generate();
     depositSourcePubkey = depositSourceKeypair.publicKey;
 
     const rent = await connection.getMinimumBalanceForRentExemption(TokenAccountLayout.span);
-    const lamports = amount.value.addn(rent);
-    // const lamports = amount.units.tokens ? 
-    //   amount.value.addn(rent) :
-    //   assets.sol.subn(rent).subn(50 * 5000); // Subtract rent and maximum lamports per signature
-
     createTokenAccountIx = SystemProgram.createAccount({
       fromPubkey: wallet.publicKey,
       newAccountPubkey: depositSourcePubkey,
       programId: TOKEN_PROGRAM_ID,
       space: TokenAccountLayout.span,
-      lamports: parseInt(lamports.toString())
+      lamports: parseInt(lamports.addn(rent).toString())
     })
 
     initTokenAccountIx = Token.createInitAccountInstruction(
@@ -387,11 +332,12 @@ export const deposit = async (abbrev: string, amount: Amount)
   }
 
   if (!assets.obligation) {
-    initObligationIx = initObligation()
+    initObligationIx = buildInitObligationIx()
   }
 
   // Obligatory refresh instruction
   const refreshReserveIx = buildRefreshReserveIx(abbrev);
+  const amount = Amount.tokens(lamports);
   const depositIx = program.instruction.deposit(asset.depositNoteBump, amount, {
     accounts: {
       market: market.accountPubkey,
@@ -408,7 +354,7 @@ export const deposit = async (abbrev: string, amount: Amount)
       tokenProgram: TOKEN_PROGRAM_ID,
     }
   });
-  
+
   // Initialize the collateral account if it doesn't exist
   if (!asset.collateralNoteExists) {
     initCollateralAccountIx = program.instruction.initCollateralAccount(asset.collateralNoteBump, {
@@ -479,8 +425,7 @@ export const withdraw = async (abbrev: string, amount: Amount)
     return [false, undefined];
   }
 
-
-  const [ok, txid] = await refreshOldReserve(abbrev);
+  const [ok, txid] = await refreshOldReserves();
   if (!ok) {
     return [false, txid]
   }
@@ -488,45 +433,28 @@ export const withdraw = async (abbrev: string, amount: Amount)
   const reserve = market.reserves[abbrev];
   const asset = assets.tokens[abbrev];
 
-  let withdrawAccount = asset.walletTokenPubkey
-  let withdrawKeypair: Keypair | undefined;
-
   // Close wrapped sol ixs
   let createTokenAccountIx: TransactionInstruction | undefined;
   let closeTokenAccountIx: TransactionInstruction | undefined;
-  let initTokenAccountIx: TransactionInstruction | undefined;
 
   // Create the wallet token account if it doesn't exist
-  if (!asset.walletTokenExists || !withdrawAccount) {
-    withdrawKeypair = Keypair.generate();
-    withdrawAccount = withdrawKeypair.publicKey;
-
-    const rent = await connection.getMinimumBalanceForRentExemption(TokenAccountLayout.span);
-
-    createTokenAccountIx = SystemProgram.createAccount({
-      fromPubkey: wallet.publicKey,
-      newAccountPubkey: withdrawAccount,
-      programId: TOKEN_PROGRAM_ID,
-      space: TokenAccountLayout.span,
-      lamports: rent
-    })
-
-    initTokenAccountIx = Token.createInitAccountInstruction(
+  if (!asset.walletTokenExists) {
+    createTokenAccountIx = Token.createAssociatedTokenAccountInstruction(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
-      NATIVE_MINT,
-      withdrawAccount,
-      wallet.publicKey
-    );
+      asset.tokenMintPubkey,
+      asset.walletTokenPubkey,
+      wallet.publicKey,
+      wallet.publicKey);
   }
 
   // Obligatory refresh instruction
-  const refreshReserveIxs = buildRefreshReserveIxs(abbrev);
+  const refreshReserveIxs = buildRefreshReserveIxs();
 
   const withdrawCollateralBumps = {
     collateralAccount: asset.collateralNoteBump,
     depositAccount: asset.depositNoteBump,
   };
-  console.log(amount);
   const withdrawCollateralIx = program.instruction.withdrawCollateral(withdrawCollateralBumps, amount, {
     accounts: {
       market: market.accountPubkey,
@@ -554,34 +482,42 @@ export const withdraw = async (abbrev: string, amount: Amount)
 
       depositor: wallet.publicKey,
       depositAccount: asset.depositNotePubkey,
-      withdrawAccount,
+      withdrawAccount: asset.walletTokenPubkey,
 
       tokenProgram: TOKEN_PROGRAM_ID,
     },
   });
 
   // If withdrawing SOL, unwrap it first
-  if (withdrawAccount && asset.tokenMintPubkey.equals(NATIVE_MINT)) {
+  if (asset.tokenMintPubkey.equals(NATIVE_MINT)) {
     closeTokenAccountIx = Token.createCloseAccountInstruction(
       TOKEN_PROGRAM_ID,
-      withdrawAccount,
+      asset.walletTokenPubkey,
       wallet.publicKey,
       wallet.publicKey,
       []);
   }
 
-  const ix = [
-    createTokenAccountIx,
-    initTokenAccountIx,
-    ...refreshReserveIxs,
-    withdrawCollateralIx,
-    withdrawIx,
-    closeTokenAccountIx,
-    closeTokenAccountIx].filter(ix => ix) as TransactionInstruction[];
-  const signers = [withdrawKeypair].filter(signer => signer) as Keypair[];
+  const ixs: InstructionAndSigner[] = [
+    {
+      ix: [
+        createTokenAccountIx,
+      ].filter(ix => ix) as TransactionInstruction[],
+    },
+    {
+      ix: [
+        ...refreshReserveIxs,
+        withdrawCollateralIx,
+        withdrawIx,
+        closeTokenAccountIx,
+        closeTokenAccountIx
+      ].filter(ix => ix) as TransactionInstruction[],
+    }
+  ];
 
   try {
-    return await sendTransaction(program.provider, ix, signers);
+    const [ok, txids] = await sendAllTransactions(program.provider, ixs);
+    return [ok, txids[txids.length - 1]]
   } catch (err) {
     console.error(`Withdraw error: ${transactionErrorToString(err)}`);
     rollbar.error(`Withdraw error: ${transactionErrorToString(err)}`);
@@ -596,7 +532,7 @@ export const borrow = async (abbrev: string, amount: Amount)
     return [false, undefined];
   }
 
-  const [ok, txid] = await refreshOldReserve(abbrev);
+  const [ok, txid] = await refreshOldReserves();
   if (!ok) {
     return [false, txid]
   }
@@ -604,42 +540,24 @@ export const borrow = async (abbrev: string, amount: Amount)
   const reserve = market.reserves[abbrev];
   const asset = assets.tokens[abbrev];
 
-  let walletTokenPubkey: PublicKey;
-  let walletTokenKeypair: Keypair | undefined;
-
-  // Create token account ixs
+  // Create token account ix
   let createTokenAccountIx: TransactionInstruction | undefined;
-  let initTokenAccountIx: TransactionInstruction | undefined;
 
-  // Create loan note token ixs
+  // Create loan note token ix
   let initLoanAccountIx: TransactionInstruction | undefined;
 
   // Close account ixs for unwrapping SOL
   let closeTokenAccountIx: TransactionInstruction | undefined;
 
   // Create the wallet token account if it doesn't exist
-  if (asset.walletTokenExists && asset.walletTokenPubkey) {
-    walletTokenPubkey = asset.walletTokenPubkey;
-  } else {
-    walletTokenKeypair = Keypair.generate();
-    walletTokenPubkey = walletTokenKeypair.publicKey;
-
-    const rent = await connection.getMinimumBalanceForRentExemption(TokenAccountLayout.span);
-
-    createTokenAccountIx = SystemProgram.createAccount({
-      fromPubkey: wallet.publicKey,
-      newAccountPubkey: walletTokenPubkey,
-      programId: TOKEN_PROGRAM_ID,
-      space: TokenAccountLayout.span,
-      lamports: rent
-    })
-
-    initTokenAccountIx = Token.createInitAccountInstruction(
+  if (!asset.walletTokenExists) {
+    createTokenAccountIx = Token.createAssociatedTokenAccountInstruction(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
-      NATIVE_MINT,
-      walletTokenPubkey,
-      wallet.publicKey
-    );
+      asset.tokenMintPubkey,
+      asset.walletTokenPubkey,
+      wallet.publicKey,
+      wallet.publicKey);
   }
 
   // Create the loan note account if it doesn't exist
@@ -664,11 +582,7 @@ export const borrow = async (abbrev: string, amount: Amount)
   }
 
   // Obligatory refresh instruction
-  const refreshReserveIxs = buildRefreshReserveIxs(abbrev);
-  if (refreshReserveIxs.length > 3) {
-    console.log("Can not open more than 3 positions")
-    return [false, undefined];
-  }
+  const refreshReserveIxs = buildRefreshReserveIxs();
 
   const borrowIx = program.instruction.borrow(asset.loanNoteBump, amount, {
     accounts: {
@@ -682,7 +596,7 @@ export const borrow = async (abbrev: string, amount: Amount)
 
       borrower: wallet.publicKey,
       loanAccount: asset.loanNotePubkey,
-      receiverAccount: walletTokenPubkey,
+      receiverAccount: asset.walletTokenPubkey,
 
       tokenProgram: TOKEN_PROGRAM_ID,
     },
@@ -692,25 +606,32 @@ export const borrow = async (abbrev: string, amount: Amount)
   if (asset.tokenMintPubkey.equals(NATIVE_MINT)) {
     closeTokenAccountIx = Token.createCloseAccountInstruction(
       TOKEN_PROGRAM_ID,
-      walletTokenPubkey,
+      asset.walletTokenPubkey,
       wallet.publicKey,
       wallet.publicKey,
       []);
   }
 
-  const ix = [
-    createTokenAccountIx,
-    initTokenAccountIx,
-    initLoanAccountIx,
-    ...refreshReserveIxs,
-    borrowIx,
-    closeTokenAccountIx
-  ].filter(ix => ix) as TransactionInstruction[];
-  const signers = [walletTokenKeypair].filter(signer => signer) as Keypair[];
+  const ixs: InstructionAndSigner[] = [
+    {
+      ix: [
+        createTokenAccountIx,
+        initLoanAccountIx,
+      ].filter(ix => ix) as TransactionInstruction[],
+    },
+    {
+      ix: [
+        ...refreshReserveIxs,
+        borrowIx,
+        closeTokenAccountIx
+      ].filter(ix => ix) as TransactionInstruction[],
+    }
+  ];
 
   try {
     // Make deposit RPC call
-    return await sendTransaction(program.provider, ix, signers);
+    const [ok, txids] = await sendAllTransactions(program.provider, ixs);
+    return [ok, txids[txids.length - 1]];
   } catch (err) {
     console.error(`Borrow error: ${transactionErrorToString(err)}`);
     rollbar.error(`Borrow error: ${transactionErrorToString(err)}`);
@@ -719,13 +640,13 @@ export const borrow = async (abbrev: string, amount: Amount)
 };
 
 // Repay
-export const repay = async (abbrev: string, amount: Amount)
+export const repay = async (abbrev: string, lamports: BN)
   : Promise<[ok: boolean, txid: string | undefined]> => {
   if (!assets || !program) {
     return [false, undefined];
   }
 
-  const [ok, txid] = await refreshOldReserve(abbrev);
+  const [ok, txid] = await refreshOldReserves();
   if (!ok) {
     return [false, txid]
   }
@@ -745,26 +666,18 @@ export const repay = async (abbrev: string, amount: Amount)
 
   // When handling SOL, ignore existing wsol accounts and initialize a new wrapped sol account
   if (asset.tokenMintPubkey.equals(NATIVE_MINT)) {
-
     // Overwrite the deposit source
     // The app will always wrap native sol, ignoring any existing wsol
     depositSourceKeypair = Keypair.generate();
     depositSourcePubkey = depositSourceKeypair.publicKey;
 
     const rent = await connection.getMinimumBalanceForRentExemption(TokenAccountLayout.span);
-    const lamports = amount.value.addn(rent);
-    // const lamports = amount.units.tokens ? 
-    //   amount.value.addn(rent).add(new BN(1000000000)) :
-    //   assets.sol.subn(500 * 5000); // Subtract rent and maximum lamports per signature
-
-    console.log(lamports.toString());
-
     createTokenAccountIx = SystemProgram.createAccount({
       fromPubkey: wallet.publicKey,
       newAccountPubkey: depositSourcePubkey,
       programId: TOKEN_PROGRAM_ID,
       space: TokenAccountLayout.span,
-      lamports: parseInt(lamports.toString())
+      lamports: parseInt(lamports.addn(rent).toString())
     })
 
     initTokenAccountIx = Token.createInitAccountInstruction(
@@ -780,13 +693,14 @@ export const repay = async (abbrev: string, amount: Amount)
       wallet.publicKey,
       wallet.publicKey,
       []);
-  } else if (!asset.walletTokenExists || !asset.walletTokenPubkey) {
+  } else if (!asset.walletTokenExists) {
     return [false, undefined];
   }
 
   // Obligatory refresh instruction
   const refreshReserveIx = buildRefreshReserveIx(abbrev);
 
+  const amount = Amount.tokens(lamports);
   const repayIx = program.instruction.repay(amount, {
     accounts: {
       market: market.accountPubkey,
@@ -823,7 +737,7 @@ export const repay = async (abbrev: string, amount: Amount)
   }
 };
 
-export const initObligation = ()
+const buildInitObligationIx = ()
   : TransactionInstruction | undefined => {
   if (!program || !assets) {
     return;
@@ -843,10 +757,8 @@ export const initObligation = ()
   });
 };
 
-/**Creates ixs to refresh all reserves
- * that either have the abbreviation or the
- * user has collateral or borrows in. */
-export const buildRefreshReserveIxs = (abbrev: string) => {
+/** Creates ixs to refresh all reserves. */
+const buildRefreshReserveIxs = () => {
   const ix: TransactionInstruction[] = [];
 
   if (!assets) {
@@ -854,46 +766,45 @@ export const buildRefreshReserveIxs = (abbrev: string) => {
   }
 
   for (const assetAbbrev in assets.tokens) {
-    const asset = assets.tokens[assetAbbrev];
-    if (abbrev == assetAbbrev || !asset.collateralNoteBalance.amount.isZero() || !asset.loanNoteBalance.amount.isZero()) {
-      const refreshReserveIx = buildRefreshReserveIx(assetAbbrev);
-      ix.push(refreshReserveIx);
-    }
+    const refreshReserveIx = buildRefreshReserveIx(assetAbbrev);
+    ix.push(refreshReserveIx);
   }
   return ix;
 }
 
-/**Sends transactions to refresh the reserve
+/**Sends transactions to refresh all reserves
  * until it can be fully refreshed once more. */
-export const refreshOldReserve = async (abbrev: string)
+const refreshOldReserves = async ()
   : Promise<[ok: boolean, txid: string | undefined]> => {
   if (!program) {
     return [false, undefined];
   }
-
-  let reserve = market.reserves[abbrev];
-  let accruedUntil = reserve.accruedUntil;
   let result: [ok: boolean, txid: string | undefined] = [true, undefined];
 
-  while (accruedUntil && accruedUntil.add(MAX_ACCRUAL_SECONDS).ltn(Date.now() / 1000)) {
-    const refreshReserveIx = buildRefreshReserveIx(abbrev);
+  for (const abbrev in market.reserves) {
+    let reserve = market.reserves[abbrev];
+    let accruedUntil = reserve.accruedUntil;
 
-    const ix = [
-      refreshReserveIx
-    ].filter(ix => ix) as TransactionInstruction[];
+    while (accruedUntil && accruedUntil.add(MAX_ACCRUAL_SECONDS).ltn(Date.now() / 1000)) {
+      const refreshReserveIx = buildRefreshReserveIx(abbrev);
 
-    try {
-      result = await sendTransaction(program.provider, ix);
-    } catch (err) {
-      console.log(transactionErrorToString(err));
-      return [false, undefined];
+      const ix = [
+        refreshReserveIx
+      ].filter(ix => ix) as TransactionInstruction[];
+
+      try {
+        result = await sendTransaction(program.provider, ix);
+      } catch (err) {
+        console.log(transactionErrorToString(err));
+        return [false, undefined];
+      }
+      accruedUntil = accruedUntil.add(MAX_ACCRUAL_SECONDS);
     }
-    accruedUntil = accruedUntil.add(MAX_ACCRUAL_SECONDS);
   }
   return result;
 }
 
-export const buildRefreshReserveIx = (abbrev: string) => {
+const buildRefreshReserveIx = (abbrev: string) => {
   if (!program) {
     return;
   }
@@ -906,10 +817,8 @@ export const buildRefreshReserveIx = (abbrev: string) => {
       marketAuthority: market.authorityPubkey,
 
       reserve: reserve.accountPubkey,
-      vault: reserve.vaultPubkey,
       feeNoteVault: reserve.feeNoteVaultPubkey,
       depositNoteMint: reserve.depositNoteMintPubkey,
-      loanNoteMint: reserve.loanNoteMintPubkey,
 
       pythOraclePrice: reserve.pythPricePubkey,
       tokenProgram: TOKEN_PROGRAM_ID,
@@ -933,43 +842,29 @@ export const airdrop = async (abbrev: string, lamports: BN)
     return [false, undefined];
   }
 
-  let tokenPubkey = asset.walletTokenPubkey;
-
   let ix: TransactionInstruction[] = [];
   let signers: Signer[] = [];
 
   //optionally create a token account for wallet
 
   let ok: boolean = false, txid: string | undefined;
-  let tokenAccountCreated = false;
 
-  if (!asset.walletTokenExists || !tokenPubkey) {
-    const tokenAccount = Keypair.generate();
-    tokenPubkey = tokenAccount.publicKey;
-    signers.push(tokenAccount);
-    tokenAccountCreated = true;
-
-    const createAccountIx = SystemProgram.createAccount({
-      programId: TOKEN_PROGRAM_ID,
-      newAccountPubkey: tokenPubkey,
-      space: TokenAccountLayout.span,
-      fromPubkey: wallet.publicKey,
-      lamports: await Token.getMinBalanceRentForExemptAccount(connection),
-    });
-    ix.push(createAccountIx);
-
-    const initTokenAccountIx = Token.createInitAccountInstruction(TOKEN_PROGRAM_ID, reserve.tokenMintPubkey, tokenAccount.publicKey, wallet.publicKey);
-    ix.push(initTokenAccountIx);
+  if (!asset.walletTokenExists) {
+    const createTokenAccountIx = Token.createAssociatedTokenAccountInstruction(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      asset.tokenMintPubkey,
+      asset.walletTokenPubkey,
+      wallet.publicKey,
+      wallet.publicKey);
+    ix.push(createTokenAccountIx);
   }
 
   if (reserve.tokenMintPubkey.equals(NATIVE_MINT)) {
-    // Special case for WSOL
-    //sol airdrop
+    // Sol airdrop
     try {
-      // web3js doesn't use BN
-      const endpoint = abbrev !== 'SOL' 
-        ? connection 
-          : new anchor.web3.Connection('https://api.devnet.solana.com', (anchor.Provider.defaultOptions()).commitment);
+      // Use a specific endpoint. A hack because some devnet endpoints are unable to airdrop
+      const endpoint = new anchor.web3.Connection('https://api.devnet.solana.com', (anchor.Provider.defaultOptions()).commitment);
       const txid = await endpoint.requestAirdrop(wallet.publicKey, parseInt(lamports.toString()));
       console.log('Airdrop Transaction ID: ', txid);
       return [true, txid];
@@ -979,11 +874,11 @@ export const airdrop = async (abbrev: string, lamports: BN)
       return [false, undefined]
     }
   } else if (reserve.faucetPubkey) {
-    //faucet airdrop
+    // Faucet airdrop
     const faucetAirdropIx = await buildFaucetAirdropIx(
       lamports,
       reserve.tokenMintPubkey,
-      tokenPubkey,
+      asset.walletTokenPubkey,
       reserve.faucetPubkey
     );
     ix.push(faucetAirdropIx);
@@ -991,7 +886,7 @@ export const airdrop = async (abbrev: string, lamports: BN)
     [ok, txid] = await sendTransaction(program.provider, ix, signers);
   } else {
     // Mint to the destination token account
-    const mintToIx = Token.createMintToInstruction(TOKEN_PROGRAM_ID, reserve.tokenMintPubkey, tokenPubkey, wallet.publicKey, [], new u64(lamports.toArray()));
+    const mintToIx = Token.createMintToInstruction(TOKEN_PROGRAM_ID, reserve.tokenMintPubkey, asset.walletTokenPubkey, wallet.publicKey, [], new u64(lamports.toArray()));
     ix.push(mintToIx);
 
     [ok, txid] = await sendTransaction(program.provider, ix, signers);

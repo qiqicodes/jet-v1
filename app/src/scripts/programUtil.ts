@@ -1,11 +1,12 @@
 import { BN } from "@project-serum/anchor";
 import * as anchor from "@project-serum/anchor";
 import { MintInfo, MintLayout, AccountInfo as TokenAccountInfo, AccountLayout as TokenAccountLayout } from "@solana/spl-token";
-import { AccountInfo, Commitment, Connection, Context, PublicKey, SignatureResult, Signer, Transaction, TransactionInstruction } from "@solana/web3.js";
+import { AccountInfo, Commitment, Connection, Context, PublicKey, Signer, Transaction, TransactionInstruction } from "@solana/web3.js";
 import { Buffer } from "buffer";
 import type { HasPublicKey, IdlMetadata, JetMarketReserveInfo, MarketAccount, ObligationAccount, ObligationPositionStruct, ReserveAccount, ReserveConfigStruct, ReserveStateStruct, ToBytes } from "../models/JetTypes";
 import { MarketReserveInfoList, PositionInfoList, ReserveStateLayout } from "./layout";
 import { TokenAmount } from "./utils";
+import { inDevelopment } from "./jet";
 // Find PDA functions and jet algorithms that are reimplemented here
 
 export const SOL_DECIMALS = 9;
@@ -147,6 +148,9 @@ export const getTokenAccountAndSubscribe = function (
 ): number {
   let subscriptionId = getAccountInfoAndSubscribe(connection, publicKey, (account, context) => {
     if (account != null) {
+      if(account.data.length != 165){
+        console.log(account.data.length);
+      }
       const decoded = parseTokenAccount(account, publicKey);
       const amount = TokenAmount.tokenAccount(decoded.data, decimals);
       callback(amount, context);
@@ -296,11 +300,11 @@ export const sendTransaction = async (
 
   // Sending phase
   const rawTransaction = transaction.serialize();
-  console.log(`Sending transaction, ${rawTransaction.byteLength} of 1232 bytes...`, transaction);
   const txid = await provider.connection.sendRawTransaction(
     rawTransaction,
     provider.opts
-  );
+    );
+  console.log(`Transaction ${explorerUrl(txid)} ${rawTransaction.byteLength} of 1232 bytes...`, transaction);
 
   // Confirming phase
   let ok = true;
@@ -314,20 +318,19 @@ export const sendTransaction = async (
 
     if (status?.err) {
       ok = false;
-      console.log("Transaction failed...", explorerUrl("transaction", txid));
-    } else {
-      console.log("Transaction success...", explorerUrl("transaction", txid));
     }
   }
 
   return [ok, txid];
 };
 
+export interface InstructionAndSigner { ix: TransactionInstruction[], signers?: Signer[] };
+
 export const sendAllTransactions = async (
   provider: anchor.Provider,
-  transactions: { ix: TransactionInstruction[], signers?: Signer[] }[],
+  transactions: InstructionAndSigner[],
   skipConfirmation?: boolean
-): Promise<[ok: boolean, txid: string[] | undefined]> => {
+): Promise<[ok: boolean, txid: string[]]> => {
   if (!provider.wallet?.publicKey) {
     throw new Error("Wallet is not connected");
   }
@@ -364,11 +367,11 @@ export const sendAllTransactions = async (
   const txids: string[] = [];
   for (const transaction of signedTransactions) {
     const rawTransaction = transaction.serialize();
-    console.log(`Sending transaction, ${rawTransaction.byteLength} of 1232 bytes...`, transaction);
     const txid = await provider.connection.sendRawTransaction(
       rawTransaction,
       provider.opts
     );
+    console.log(`Transaction ${explorerUrl(txid)} ${rawTransaction.byteLength} of 1232 bytes...`, transaction);
     txids.push(txid);
 
     // Confirming phase
@@ -382,19 +385,15 @@ export const sendAllTransactions = async (
 
       if (status?.err) {
         ok = false;
-        console.log("Transaction failed...", explorerUrl("transaction", txid));
-        return [ok, txids];
-      } else {
-        console.log("Transaction success...", explorerUrl("transaction", txid));
       }
     }
   }
   return [ok, txids];
 };
 
-export const explorerUrl = (type: "transaction", address: string, cluster?: string) => {
-  const clusterParam = cluster !== undefined ? `?cluster=${cluster}` : "";
-  return `https://explorer.solana.com/${type}/${address}${clusterParam}`
+export const explorerUrl = (txid: string) => {
+  const clusterParam = inDevelopment ? `?cluster=devnet` : "";
+  return `https://explorer.solana.com/transaction/${txid}${clusterParam}`
 };
 
 /**
