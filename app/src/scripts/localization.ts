@@ -23,7 +23,12 @@ export const getLocale = async (): Promise<void> => {
     locale = await resp.json();
     geoBannedCountries.forEach(c => {
       if (!locale?.country || c.code === locale?.country) {
-        GEOBANNED.set(true);
+        if (locale?.country === "UA") {
+          const ifCrimea: string = locale?.postal.toString().substring(0, 2);
+          ifCrimea === ("95" || "96" || "97" || "98") ? GEOBANNED.set(true) : null
+        } else {
+          GEOBANNED.set(true);
+        }
       }
     });
 
