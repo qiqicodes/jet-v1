@@ -57,8 +57,10 @@ jobs:
             ~/.cargo/bin/anchor
 
       - run: echo "PATH=$HOME/.local/share/solana/install/active_release/bin:$HOME/.cargo/bin:$PATH" >> $GITHUB_ENV
-      - run: ls -al ~/
-      - run: ls -al ~/.cargo/bin
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '16'
 
       - uses: actions/checkout@v2
         with:
