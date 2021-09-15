@@ -414,6 +414,12 @@ input[type=number] {
 .datatable tr:hover, .datatable tr.active {
   background: var(--grey) !important;
 }
+/* fix for mozilla grey background overflow */
+@-moz-document url-prefix() {
+  .datatable tr:hover, .datatable tr.active {
+    background: var(--white) !important;
+  }
+}  
 .datatable tr.active {
   box-shadow: var(--neu-shadow-inset-low) !important;
 }
