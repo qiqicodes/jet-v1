@@ -98,21 +98,25 @@
     disabledInput = false;
     if ($TRADE_ACTION === 'deposit' && (walletBalances[$CURRENT_RESERVE.abbrev]?.amount.isZero() || assetsAreCurrentBorrow[$CURRENT_RESERVE.abbrev])) {
       disabledInput = true;
-      if (assetsAreCurrentBorrow[$CURRENT_RESERVE.abbrev]) {
+      if (walletBalances[$CURRENT_RESERVE.abbrev]?.amount.isZero()) {
+        disabledMessage = dictionary[$PREFERRED_LANGUAGE].cockpit.noBalanceForDeposit
+          .replaceAll('{{ASSET}}', $CURRENT_RESERVE.abbrev);
+      } else if (assetsAreCurrentBorrow[$CURRENT_RESERVE.abbrev]) {
         disabledMessage = dictionary[$PREFERRED_LANGUAGE].cockpit.assetIsCurrentBorrow
           .replaceAll('{{ASSET}}', $CURRENT_RESERVE.abbrev);
       }
-    } else if ($TRADE_ACTION === 'withdraw' && (!collateralBalances[$CURRENT_RESERVE.abbrev] || noDeposits || belowMinCRatio )) {
+    } else if ($TRADE_ACTION === 'withdraw' && (noDeposits || belowMinCRatio )) {
       disabledInput = true;
       if (noDeposits) {
-        disabledMessage = disabledMessage = dictionary[$PREFERRED_LANGUAGE].cockpit.noDeposits;
-      } else if (belowMinCRatio) {
+        disabledMessage = disabledMessage = dictionary[$PREFERRED_LANGUAGE].cockpit.noDepositsForWithdraw
+          .replaceAll('{{ASSET}}', $CURRENT_RESERVE.abbrev);
+      } else {
         disabledMessage = disabledMessage = dictionary[$PREFERRED_LANGUAGE].cockpit.belowMinCRatio;
       }
     } else if ($TRADE_ACTION === 'borrow' && (noDeposits || belowMinCRatio || assetsAreCurrentDeposit[$CURRENT_RESERVE.abbrev] || !$CURRENT_RESERVE.availableLiquidity.uiAmountFloat)) {
       disabledInput = true;
       if (noDeposits) {
-        disabledMessage = disabledMessage = dictionary[$PREFERRED_LANGUAGE].cockpit.noDeposits;
+        disabledMessage = disabledMessage = dictionary[$PREFERRED_LANGUAGE].cockpit.noDepositsForBorrow;
       } else if (belowMinCRatio) {
         disabledMessage = disabledMessage = dictionary[$PREFERRED_LANGUAGE].cockpit.belowMinCRatio;
       } else if (assetsAreCurrentDeposit[$CURRENT_RESERVE.abbrev]) {
@@ -121,6 +125,8 @@
       }
     } else if ($TRADE_ACTION === 'repay' && !loanBalances[$CURRENT_RESERVE.abbrev]) {
       disabledInput = true;
+      disabledMessage = disabledMessage = dictionary[$PREFERRED_LANGUAGE].cockpit.noDebtForRepay
+          .replaceAll('{{ASSET}}', $CURRENT_RESERVE.abbrev);
     }
 
     return;
@@ -540,6 +546,9 @@
               <span>
                 {$rows[i].name}
               </span>
+              <span>
+                ≈ {currencyFormatter($rows[i].price, true, 2)}
+              </span>
             </td>
             <td on:click={() => reserveDetail = $rows[i]} 
               class="reserve-detail">
@@ -899,7 +908,7 @@
   }
   .trade-disabled-message span {
     font-weight: 400;
-    font-size: 12px;
+    font-size: 14px;
     padding: var(--spacing-sm);
   }
   

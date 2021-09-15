@@ -23,7 +23,7 @@
   --neu-shadow-inset-gradient: inset -2px -2px 2.5px #67cff8, inset 2px 2px 2.5px #329478;
   --neu-shadow-inset-gradient-low: inset -1.5px -1.5px 2px #67cff8, inset 1.5px 1.5px 2px #329478;
 
-  --disabled-opacity: 0.65;
+  --disabled-opacity: 0.75;
 
   --nav-width: 60px;
   --mobile-nav-height: 60px;
@@ -451,7 +451,7 @@ input[type=number] {
   padding-bottom: calc(var(--spacing-md) - 4px) !important;
 }
 .datatable-divider {
-  width: 1000% !important;
+  width: 2000% !important;
   height: 1px !important;
   background: var(--gradient) !important;
   margin: var(--spacing-xs) 0 !important;
@@ -482,6 +482,14 @@ input[type=number] {
   height: 20px !important;
   width: auto !important;
   left: 20px !important;
+}
+.datatable .dt-asset span:first-of-type {
+  top: 20px !important;
+}
+.datatable .dt-asset span:last-of-type {
+  opacity: var(--disabled-opacity) !important;
+  font-size: 9px !important;
+  top: 32px !important;
 }
 .datatable-spacer td {
   padding: calc(var(--spacing-xs) / 3) 0 !important;
