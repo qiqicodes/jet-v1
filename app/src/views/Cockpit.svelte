@@ -230,7 +230,6 @@
     // Set adjusted ratio to current ratio
     if (!adjustedRatio && obligation.colRatio) {
       adjustedRatio = obligation.colRatio;
-      console.log('adjusted c-ratio updated to c-ratio');
     }
 
     // Check if user's current position shouldn't allow trades
@@ -238,7 +237,6 @@
 
     // Get max input value for current trade scenario
     getMaxInputValue();
-    console.log('value updated');
   };
 
   // Check scenario and submit trade
