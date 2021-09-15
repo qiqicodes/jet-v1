@@ -102,8 +102,13 @@
         disabledMessage = dictionary[$PREFERRED_LANGUAGE].cockpit.assetIsCurrentBorrow
           .replace('{{ASSET}}', $CURRENT_RESERVE.abbrev);
       }
-    } else if ($TRADE_ACTION === 'withdraw' && !collateralBalances[$CURRENT_RESERVE.abbrev]) {
+    } else if ($TRADE_ACTION === 'withdraw' && (!collateralBalances[$CURRENT_RESERVE.abbrev] || noDeposits || belowMinCRatio )) {
       disabledInput = true;
+      if (noDeposits) {
+        disabledMessage = disabledMessage = dictionary[$PREFERRED_LANGUAGE].cockpit.noDeposits;
+      } else if (belowMinCRatio) {
+        disabledMessage = disabledMessage = dictionary[$PREFERRED_LANGUAGE].cockpit.belowMinCRatio;
+      }
     } else if ($TRADE_ACTION === 'borrow' && (noDeposits || belowMinCRatio || assetsAreCurrentDeposit[$CURRENT_RESERVE.abbrev] || !$CURRENT_RESERVE.availableLiquidity.uiAmountFloat)) {
       disabledInput = true;
       if (noDeposits) {
@@ -177,6 +182,7 @@
              : 1
       );
     }
+    
   };
 
   // Update all market/user data
