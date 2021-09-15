@@ -73,8 +73,8 @@ export const generateCopilotSuggestion = (): void => {
         good: false,
         overview: dictionary[preferredLanguage].copilot.warning.twentyPercent.overview,
         detail: dictionary[preferredLanguage].copilot.warning.twentyPercent.detail
-          .replace('{{C-RATIO}}', currencyFormatter(colRatio * 100, false, 1))
-          .replace('{{JET MIN C-RATIO}}', market.minColRatio * 100)
+          .replaceAll('{{C-RATIO}}', currencyFormatter(colRatio * 100, false, 1))
+          .replaceAll('{{JET MIN C-RATIO}}', market.minColRatio * 100)
       }
     });
   } else {

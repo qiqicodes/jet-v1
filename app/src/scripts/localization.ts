@@ -23,7 +23,12 @@ export const getLocale = async (): Promise<void> => {
     locale = await resp.json();
     geoBannedCountries.forEach(c => {
       if (!locale?.country || c.code === locale?.country) {
-        GEOBANNED.set(true);
+        if (locale?.country === "UA") {
+          const ifCrimea: string = locale?.postal.toString().substring(0, 2);
+          ifCrimea === ("95" || "96" || "97" || "98") ? GEOBANNED.set(true) : null
+        } else {
+          GEOBANNED.set(true);
+        }
       }
     });
 
@@ -143,6 +148,7 @@ export const dictionary: any = {
       minCRatio: "This will put your position at our minimum collateralization ratio, therefore placing your account in liquidation territory. Are you sure?",
       belowMinRatio: "You are undercollateralized. Deposit or repay your debt to avoid liquidation.",
       subjectToLiquidation: "This trade lowers your collateralization ratio to {{NEW-C-RATIO}}%, which makes you subject to liquidation. Would you still like to borrow?",
+      rejectTrade: "This trade would lower your collateralization ratio to {{NEW-C-RATIO}}%, which would be below our minimum ratio of {{JET MIN C-RATIO}}.",
       confirm: "Confirm",
       repay: "Repay",
       amountOwed: "Amount Owed",
@@ -265,6 +271,7 @@ export const dictionary: any = {
       minCRatio: "这将使您的头寸处于我们的最低抵押率，从而使您的账户处于清算区域。 你确定吗？",
       belowMinRatio: "您已低于最小质押率。请多存一些抵押物或偿还一些债务",
       subjectToLiquidation: "您这个交易会降低质押率到 {{NEW-C-RATIO}}% 比 Jet 要求的质押率还低 从而使您的账户处于清算区域。你确定吗？",
+      rejectTrade: "This trade would lower your collateralization ratio to {{NEW-C-RATIO}}%, which would be below our minimum ratio of {{JET MIN C-RATIO}}.",
       confirm: "确认",
       repay: "偿还",
       amountOwed: "以借贷金额",
@@ -387,6 +394,7 @@ export const dictionary: any = {
       minCRatio: "Это действие приведёт к тому, что ваша позиция достигнет минимума коэффициента обеспечения, и ваш счёт может быть подвергнут ликвидации. Вы уверены?",
       belowMinRatio: "У вас недостаточно средств в залоге. Пополните залог или верните долг чтобы избежать ликвидации.",
       subjectToLiquidation: "Эта сделка понизит ваш коэффициент обеспечения до {{NEW-C-RATIO}}%, после чего ваш счёт может быть подвергнут ликвидации. Вы всё-равно хотите занять?",
+      rejectTrade: "This trade would lower your collateralization ratio to {{NEW-C-RATIO}}%, which would be below our minimum ratio of {{JET MIN C-RATIO}}.",
       confirm: "Подтвердить",
       repay: "Вернуть",
       amountOwed: "Сумма долга",
@@ -509,6 +517,7 @@ export const dictionary: any = {
       minCRatio: "Bu işlem pozisyonunuzu minimum teminat oranına alacaktır dolayısıyla hesabınızı likidasyon bölgesine çekeceksiniz.Bu işlemi yapmayı istediğinize emin misiniz?",
       belowMinRatio: "Teminatsızsınız. Likidasyondan kaçınmak için para yatırın veya borcunuzu geri ödeyin.",
       subjectToLiquidation: "Bu işlem, likidasyon oranınızı %{{NEW-C-RATIO}} 'ya düşürür ve bu da sizi likidasyona tabi kılar. yine de ödünç almak ister misin?",
+      rejectTrade: "This trade would lower your collateralization ratio to {{NEW-C-RATIO}}%, which would be below our minimum ratio of {{JET MIN C-RATIO}}.",
       confirm: "Onayla",
       repay: "Geri öde",
       amountOwed: "Borçlu Tutar",

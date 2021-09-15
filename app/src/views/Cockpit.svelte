@@ -64,8 +64,8 @@
           good: true,
           header: dictionary[$PREFERRED_LANGUAGE].copilot.alert.success,
           text:  dictionary[$PREFERRED_LANGUAGE].copilot.alert.airdropSuccess
-            .replace('{{UI AMOUNT}}', amount.uiAmount)
-            .replace('{{RESERVE ABBREV}}', reserve.abbrev)
+            .replaceAll('{{UI AMOUNT}}', amount.uiAmount)
+            .replaceAll('{{RESERVE ABBREV}}', reserve.abbrev)
         }
       });
     } else if (!ok && !txid) {
@@ -100,10 +100,15 @@
       disabledInput = true;
       if (assetsAreCurrentBorrow[$CURRENT_RESERVE.abbrev]) {
         disabledMessage = dictionary[$PREFERRED_LANGUAGE].cockpit.assetIsCurrentBorrow
-          .replace('{{ASSET}}', $CURRENT_RESERVE.abbrev);
+          .replaceAll('{{ASSET}}', $CURRENT_RESERVE.abbrev);
       }
-    } else if ($TRADE_ACTION === 'withdraw' && !collateralBalances[$CURRENT_RESERVE.abbrev]) {
+    } else if ($TRADE_ACTION === 'withdraw' && (!collateralBalances[$CURRENT_RESERVE.abbrev] || noDeposits || belowMinCRatio )) {
       disabledInput = true;
+      if (noDeposits) {
+        disabledMessage = disabledMessage = dictionary[$PREFERRED_LANGUAGE].cockpit.noDeposits;
+      } else if (belowMinCRatio) {
+        disabledMessage = disabledMessage = dictionary[$PREFERRED_LANGUAGE].cockpit.belowMinCRatio;
+      }
     } else if ($TRADE_ACTION === 'borrow' && (noDeposits || belowMinCRatio || assetsAreCurrentDeposit[$CURRENT_RESERVE.abbrev] || !$CURRENT_RESERVE.availableLiquidity.uiAmountFloat)) {
       disabledInput = true;
       if (noDeposits) {
@@ -112,7 +117,7 @@
         disabledMessage = disabledMessage = dictionary[$PREFERRED_LANGUAGE].cockpit.belowMinCRatio;
       } else if (assetsAreCurrentDeposit[$CURRENT_RESERVE.abbrev]) {
         disabledMessage = disabledMessage = dictionary[$PREFERRED_LANGUAGE].cockpit.assetIsCurrentDeposit
-          .replace('{{ASSET}}', $CURRENT_RESERVE.abbrev);
+          .replaceAll('{{ASSET}}', $CURRENT_RESERVE.abbrev);
       }
     } else if ($TRADE_ACTION === 'repay' && !loanBalances[$CURRENT_RESERVE.abbrev]) {
       disabledInput = true;
@@ -177,6 +182,7 @@
              : 1
       );
     }
+    
   };
 
   // Update all market/user data
@@ -236,12 +242,23 @@
   // Check scenario and submit trade
   const checkSubmit = () => {
     if (!disabledInput) {
-      if ((obligation?.borrowedValue || $TRADE_ACTION === 'borrow') && inputAmount && adjustedRatio <= $MARKET.minColRatio) {
+      // If trade would result in c-ratio below min ratio, inform user and reject
+      if ((obligation?.borrowedValue || $TRADE_ACTION === 'borrow') && adjustedRatio <= $MARKET.minColRatio) {
+        COPILOT.set({
+          suggestion: {
+            good: false,
+            detail: dictionary[$PREFERRED_LANGUAGE].cockpit.rejectTrade
+              .replaceAll('{{NEW-C-RATIO}}', currencyFormatter(adjustedRatio * 100, false, 1))
+              .replaceAll('{{JET MIN C-RATIO}}', $MARKET.minColRatio * 100)
+          }
+        });
+      // If trade would result in c-ratio near min ratio, inform user
+      } else if ((obligation?.borrowedValue || $TRADE_ACTION === 'borrow') && adjustedRatio <= $MARKET.minColRatio + 0.2 && adjustedRatio >= $MARKET.minColRatio) {
         COPILOT.set({
           suggestion: {
             good: false,
             detail: dictionary[$PREFERRED_LANGUAGE].cockpit.subjectToLiquidation
-              .replace('{{NEW-C-RATIO}}', currencyFormatter(adjustedRatio * 100, false, 1)),                        
+              .replaceAll('{{NEW-C-RATIO}}', currencyFormatter(adjustedRatio * 100, false, 1)),                        
             action: {
               text: dictionary[$PREFERRED_LANGUAGE].cockpit.confirm,
               onClick: () => submitTrade()
@@ -275,7 +292,7 @@
     if ($TRADE_ACTION === 'deposit') {
       if (TokenAmount.tokens(tradeAmountString, walletBalances[$CURRENT_RESERVE.abbrev]?.decimals).amount.gt(walletBalances[$CURRENT_RESERVE.abbrev]?.amount)) {
         inputError = dictionary[$PREFERRED_LANGUAGE].cockpit.notEnoughAsset
-          .replace('{{ASSET}}', $CURRENT_RESERVE.abbrev);
+          .replaceAll('{{ASSET}}', $CURRENT_RESERVE.abbrev);
         inputAmount = null;
         sendingTrade = false;
         return;
@@ -351,8 +368,8 @@
           good: true,
           header: dictionary[$PREFERRED_LANGUAGE].copilot.alert.success,
           text: dictionary[$PREFERRED_LANGUAGE].cockpit.txSuccess
-            .replace('{{TRADE ACTION}}', $TRADE_ACTION)
-            .replace('{{AMOUNT AND ASSET}}', `${inputAmount} ${$CURRENT_RESERVE.abbrev}`)
+            .replaceAll('{{TRADE ACTION}}', $TRADE_ACTION)
+            .replaceAll('{{AMOUNT AND ASSET}}', `${inputAmount} ${$CURRENT_RESERVE.abbrev}`)
             .replaceAll('{{EXPLORER LINK}}', explorerUrl(txid))
         }
       });
