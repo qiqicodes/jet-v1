@@ -214,7 +214,7 @@ export const dictionary: any = {
       alert: {
         failed: "Mayday!",
         success: "Success!",
-        airdropSuccess: "We have Airdropped you {{UI AMOUNT}} {{RESERVE ABBREV}}. Please refresh the app to see your new balance.",
+        airdropSuccess: "We have Airdropped you {{UI AMOUNT}} {{RESERVE ABBREV}}.",
         refresh: "Refresh"
       }
     }
@@ -336,7 +336,7 @@ export const dictionary: any = {
       alert: {
         failed: "失败了!",
         success: "成功了!",
-        airdropSuccess: "我们已经寄给您 {{AMOUNT}} {{RESERVE ABBREV}}。请更新您到网页。",
+        airdropSuccess: "我们已经寄给您 {{AMOUNT}} {{RESERVE ABBREV}}。",
         refresh: "更新网页"
       }
     }
@@ -458,7 +458,7 @@ export const dictionary: any = {
       alert: {
         failed: "Неудача!",
         success: "Успех!",
-        airdropSuccess: "We have Airdropped you {{UI AMOUNT}} {{RESERVE ABBREV}}. Please refresh the app to see your new balance.",
+        airdropSuccess: "",
         refresh: "Refresh"
       }
     }
@@ -580,7 +580,7 @@ export const dictionary: any = {
       alert: {
         failed: "Ses ses!",
         success: "Başarılı!",
-        airdropSuccess: "Size {{UI AMOUNT}} {{RESERVE ABBREV}} Airdrop'la gönderdik. Yeni bakiyenizi görmek için lütfen uygulamayı yenileyin.",
+        airdropSuccess: "Size {{UI AMOUNT}} {{RESERVE ABBREV}} Airdrop'la gönderdik.",
         refresh: "Yenile"
       }
     }

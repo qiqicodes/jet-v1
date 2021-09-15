@@ -1,11 +1,20 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { COPILOT, PREFERRED_LANGUAGE } from '../store';
   import { dictionary } from '../scripts/localization';
   import Button from '../components/Button.svelte';
+
+  onMount(() => {
+    document.addEventListener('keypress', (e) => {
+      if (e.code === 'Escape' || e.code === 'Enter') {
+        COPILOT.set(null);
+      }
+    });
+  });
 </script>
 
 {#if $COPILOT}
-  <div class="modal-bg flex align-center justify-center" 
+  <div class="modal-bg flex align-center justify-center"
     on:click={() => COPILOT.set(null)}>
   </div>
   <div class="copilot modal flex align-center justify-center">
@@ -25,10 +34,12 @@
         <h1 class="bicyclette modal-section text-gradient">
           {dictionary[$PREFERRED_LANGUAGE].copilot.header}
         </h1>
-        <h2 class="bicyclette modal-section" 
-          style={$COPILOT.suggestion.good ? 'color: var(--jet-blue);' : 'color: var(--failure);'}>
-          {$COPILOT.suggestion.overview}
-        </h2>
+        {#if $COPILOT.suggestion.overview}
+          <h2 class="bicyclette modal-section" 
+            style={$COPILOT.suggestion.good ? 'color: var(--jet-blue);' : 'color: var(--failure);'}>
+            {$COPILOT.suggestion.overview}
+          </h2>
+        {/if}
         {#if $COPILOT.suggestion.detail}
           <span class="modal-section">
             {@html $COPILOT.suggestion.detail}

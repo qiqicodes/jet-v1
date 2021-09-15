@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap');
-
 /* General styling & root variables */
 :root {
   --black: #444444;
@@ -40,6 +38,7 @@
   --btn-radius: 7px;
   --btn-padding: 7px 20px 5px 20px;
 }
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap');
 @font-face {
   font-family: 'Bicyclette';
   src: url("./fonts/Bicyclette-Regular.woff") format('woff');
@@ -86,14 +85,14 @@ a, i {
 }
 span {
   opacity: 0.75;
-  font-size: 15px;
+  font-size: 13px;
   text-align: center;
   max-width: 475px;
 }
-sup {
+.info {
   color: var(--black);
   opacity: var(--disabled-opacity);
-  font-size: 9px !important;
+  font-size: 8px !important;
   cursor: pointer;
 }
 *:focus-visible {
@@ -255,7 +254,7 @@ input[type=number] {
 
 /* Views */
 .view-container {
-	width: clamp(250px, 98%, 1000px);
+	width: clamp(250px, 95%, 1200px);
   margin: 0 auto;
   padding: var(--spacing-xs);
 }
@@ -385,6 +384,7 @@ input[type=number] {
   box-shadow: unset !important;
 }
 .datatable th {
+  min-width: 60px !important;
   font-weight: bold !important;
   font-size: 10px !important;
   letter-spacing: 0.5px !important;
@@ -395,23 +395,22 @@ input[type=number] {
 }
 .datatable th:first-of-type {
   text-align: left !important;
-  width: 20% !important;
-  padding-left: var(--spacing-lg) !important;
+  min-width: 100px !important;
+}
+.datatable th:last-of-type, .datatable .native-toggle {
+  min-width: unset !important;
 }
 .datatable tr {
   border-radius: var(--round-radius) !important;
   cursor: pointer !important;
 }
 .datatable tr td:first-of-type, .datatable th:first-of-type {
-  width: 150px !important;
   padding-left: var(--spacing-lg) !important;
 }
 .datatable tr:hover, .datatable tr.active {
   background: var(--grey) !important;
 }
 .datatable tr.active {
-  opacity: 1 !important;
-  background: var(--grey) !important;
   box-shadow: var(--neu-shadow-inset-low) !important;
 }
 .datatable td {
@@ -463,10 +462,11 @@ input[type=number] {
   opacity: 0.8 !important;
 }
 .datatable .dt-asset span, .datatable .dt-asset img {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  left: 45px;
+  opacity: 1 !important;
+  position: absolute !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  left: 45px !important;
 }
 .datatable .dt-asset img {
   height: 20px !important;
@@ -478,11 +478,6 @@ input[type=number] {
 }
 .datatable tr.datatable-spacer:hover, .datatable-spacer:hover td {
   background: var(--white) !important;
-}
-.datatable sup {
-  position: absolute !important; 
-  top: 14px !important; 
-  right: 12px !important;
 }
 .datatable tr .jet-icons {
   opacity: 0 !important;
@@ -496,6 +491,15 @@ input[type=number] {
 }
 .datatable .faucet:hover {
   opacity: 1 !important;
+}
+.datatable .info {
+  margin-left: 0px !important;
+}
+.datatable .dt-balance {
+  opacity: 1 !important;
+  background-image: var(--gradient) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
 }
 
 /* Tablet/Mobile styling */
@@ -569,19 +573,16 @@ input[type=number] {
   .dt-table {
     padding: unset !important;
   }
+  .datatable .dt-asset span {
+    display: none !important;
+  }
   .datatable th, .datatable td.reserve-detail {
     font-size: 10px !important;
   }
+  .datatable th:first-of-type {
+    min-width: unset !important;
+  }
   .datatable td {
     font-size: 11px !important;
-  }
-  .datatable sup {
-    top: 21px !important; 
-    right: 13px !important;
-  }
-}
-@media screen and (max-width: 750px) {
-  .datatable .dt-asset span {
-    display: none !important;
   }
 }
