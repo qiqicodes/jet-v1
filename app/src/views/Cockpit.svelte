@@ -867,12 +867,14 @@
     -webkit-background-clip: text !important;
     -webkit-text-fill-color: transparent !important;
   }
-
-  /* .trade-action-section .max-input.disable:active {
-    background: var(--black) !important;
-    box-shadow: none !important;
+  .trade-action-section .max-input.disabled:active, .trade-action-section .max-input.disabled:active span, .trade-action-section .max-input.active.disabled span {
+    background: unset !important;
+    box-shadow: unset !important;
+    background-image: unset !important;
+    -webkit-background-clip: unset !important;
     -webkit-text-fill-color: unset !important;
-  } */
+  }
+
   .trade-disabled-message {
     width: calc(50% - (var(--spacing-sm) * 2))
   }
