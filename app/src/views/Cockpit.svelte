@@ -688,8 +688,10 @@
               : false}
           class:disabled={disabledInput}
           on:click={() => {
-            inputAmount = maxInputValue;
-            adjustCollateralizationRatio();
+            if (!disabledInput) {
+              inputAmount = maxInputValue;
+              adjustCollateralizationRatio();
+            }
           }}>
           <span>
             {dictionary[$PREFERRED_LANGUAGE].cockpit.max.toUpperCase()}
@@ -865,6 +867,14 @@
     -webkit-background-clip: text !important;
     -webkit-text-fill-color: transparent !important;
   }
+  .trade-action-section .max-input.disabled:active, .trade-action-section .max-input.disabled:active span, .trade-action-section .max-input.active.disabled span {
+    background: unset !important;
+    box-shadow: unset !important;
+    background-image: unset !important;
+    -webkit-background-clip: unset !important;
+    -webkit-text-fill-color: unset !important;
+  }
+
   .trade-disabled-message {
     width: calc(50% - (var(--spacing-sm) * 2))
   }
@@ -873,8 +883,7 @@
     font-size: 12px;
     padding: var(--spacing-sm);
   }
-
-
+  
   @media screen and (max-width: 1100px) {
     .cockpit-top {
       flex-direction: column;
