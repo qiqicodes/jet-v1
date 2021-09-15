@@ -58,7 +58,7 @@ export const currencyFormatter = (value: number, usd: boolean, digits?: number) 
   let currencyFormat: Intl.NumberFormat;
   let uiCurrency: string;
   if (usd) {
-    currencyFormat = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: digits ?? 2 })
+    currencyFormat = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: digits ?? 2 });
   } else {
     currencyFormat = new Intl.NumberFormat('en-US', { minimumFractionDigits: digits ?? 8, maximumFractionDigits: digits ?? 8 });
   }
