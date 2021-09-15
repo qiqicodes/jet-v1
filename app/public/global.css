@@ -181,6 +181,9 @@ input[type=number] {
 .trade-input {
   position: relative;
 }
+.trade-input.disabled input{
+  cursor: not-allowed !important;
+}
 .trade-input input {
   width: 250px;
   border-top-right-radius: 0px;
@@ -251,7 +254,9 @@ input[type=number] {
   color: var(--white);
   -webkit-text-fill-color: unset !important;
 }
-
+.disabled { 
+  cursor: not-allowed !important;
+}
 /* Views */
 .view-container {
 	width: clamp(250px, 95%, 1200px);
