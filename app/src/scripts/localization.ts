@@ -376,7 +376,7 @@ export const dictionary: any = {
       walletBalance: "Баланс кошелька",
       noDepositAmount: "Введите сумму",
       notEnoughAsset: "Недостаточно {{ASSET}}.",
-      withdraw: "Использовать",
+      withdraw: "вывести",
       availableFunds: "Доступные средства",
       lessFunds: "Недостаточно средств",
       borrow: "Занять",
