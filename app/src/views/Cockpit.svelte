@@ -4,7 +4,6 @@
 <script lang="ts">
   import { Datatable, rows } from 'svelte-simple-datatables';
   import { NATIVE_MINT } from '@solana/spl-token';
-  import { BN } from '@project-serum/anchor';
   import type { Reserve, Obligation } from '../models/JetTypes';
   import { TRADE_ACTION, MARKET, ASSETS, CURRENT_RESERVE, NATIVE, COPILOT, PREFERRED_LANGUAGE } from '../store';
   import { inDevelopment, airdrop, deposit, withdraw, borrow, repay } from '../scripts/jet';
@@ -20,14 +19,14 @@
   let walletBalances: Record<string, TokenAmount> = {};
   let collateralBalances: Record<string, number> = {};
   let loanBalances: Record<string, number> = {};
-  let maxBorrowAmount: number = 0;
-  let maxWithdrawAmount: number = 0;
+  let maxBorrowAmounts: Record<string, number> = {};
+  let maxWithdrawAmounts: Record<string, number> = {};
+  let assetsAreCurrentDeposit: Record<string, boolean> = {};
+  let assetsAreCurrentBorrow: Record<string, boolean> = {};
+  let obligation: Obligation;
   let adjustedRatio: number;
   let belowMinCRatio: boolean = false;
-  let assetIsCurrentDeposit: boolean = false;
-  let assetIsCurrentBorrow: boolean = false;
   let noDeposits: boolean = true;
-  let obligation: Obligation;
   let inputAmount: number | null;
   let maxInputValue: number;
   let inputError: string;
@@ -97,21 +96,21 @@
 
     disabledMessage = '';
     disabledInput = false;
-    if ($TRADE_ACTION === 'deposit' && (walletBalances[$CURRENT_RESERVE.abbrev]?.amount.isZero() || assetIsCurrentBorrow)) {
+    if ($TRADE_ACTION === 'deposit' && (walletBalances[$CURRENT_RESERVE.abbrev]?.amount.isZero() || assetsAreCurrentBorrow[$CURRENT_RESERVE.abbrev])) {
       disabledInput = true;
-      if (assetIsCurrentBorrow) {
+      if (assetsAreCurrentBorrow[$CURRENT_RESERVE.abbrev]) {
         disabledMessage = dictionary[$PREFERRED_LANGUAGE].cockpit.assetIsCurrentBorrow
           .replace('{{ASSET}}', $CURRENT_RESERVE.abbrev);
       }
     } else if ($TRADE_ACTION === 'withdraw' && !collateralBalances[$CURRENT_RESERVE.abbrev]) {
       disabledInput = true;
-    } else if ($TRADE_ACTION === 'borrow' && (noDeposits || belowMinCRatio || assetIsCurrentDeposit || !$CURRENT_RESERVE.availableLiquidity.uiAmountFloat)) {
+    } else if ($TRADE_ACTION === 'borrow' && (noDeposits || belowMinCRatio || assetsAreCurrentDeposit[$CURRENT_RESERVE.abbrev] || !$CURRENT_RESERVE.availableLiquidity.uiAmountFloat)) {
       disabledInput = true;
       if (noDeposits) {
         disabledMessage = disabledMessage = dictionary[$PREFERRED_LANGUAGE].cockpit.noDeposits;
       } else if (belowMinCRatio) {
         disabledMessage = disabledMessage = dictionary[$PREFERRED_LANGUAGE].cockpit.belowMinCRatio;
-      } else if (assetIsCurrentDeposit) {
+      } else if (assetsAreCurrentDeposit[$CURRENT_RESERVE.abbrev]) {
         disabledMessage = disabledMessage = dictionary[$PREFERRED_LANGUAGE].cockpit.assetIsCurrentDeposit
           .replace('{{ASSET}}', $CURRENT_RESERVE.abbrev);
       }
@@ -136,9 +135,9 @@
         maxInputValue = walletBalances[$CURRENT_RESERVE.abbrev]?.uiAmountFloat;
       }
     } else if ($TRADE_ACTION === 'withdraw') {
-      maxInputValue = maxWithdrawAmount;
+      maxInputValue = maxWithdrawAmounts[$CURRENT_RESERVE.abbrev];
     } else if ($TRADE_ACTION === 'borrow') {
-      maxInputValue = maxBorrowAmount;
+      maxInputValue = maxBorrowAmounts[$CURRENT_RESERVE.abbrev];
     } else {
       maxInputValue =  loanBalances[$CURRENT_RESERVE.abbrev]
     }
@@ -182,46 +181,49 @@
 
   // Update all market/user data
   const updateValues = (): void => {
-    // Market and User data
     marketTVL = 0;
     tableData = [];
     for (let r in $MARKET.reserves) {
+      // Market data
       marketTVL += $MARKET.reserves[r].marketSize.muln($MARKET.reserves[r].price).uiAmountFloat;
       if ($MARKET.reserves[r]) {
         tableData.push($MARKET.reserves[r]);
       }
 
+      // Position balances
       collateralBalances[r] = $ASSETS?.tokens[r]?.collateralBalance.uiAmountFloat ?? 0;
       loanBalances[r] = $ASSETS?.tokens[r]?.loanBalance.uiAmountFloat ?? 0;
-    };
 
-    if ($CURRENT_RESERVE && $ASSETS?.tokens[$CURRENT_RESERVE.abbrev]) {
       // Deposit data
-      walletBalances[$CURRENT_RESERVE.abbrev] = $ASSETS.tokens[$CURRENT_RESERVE.abbrev].tokenMintPubkey.equals(NATIVE_MINT) 
-        ? $ASSETS.sol
-        : $ASSETS.tokens[$CURRENT_RESERVE.abbrev].walletTokenBalance;
-        
+     if ($ASSETS) {
+        walletBalances[r] = $ASSETS.tokens[r]?.tokenMintPubkey.equals(NATIVE_MINT) 
+          ? $ASSETS.sol
+          : $ASSETS.tokens[r]?.walletTokenBalance;
+      }
+      
+      // Withdraw data
+      maxWithdrawAmounts[r] = obligation?.borrowedValue
+        ? (obligation.depositedValue - ($MARKET.minColRatio * obligation.borrowedValue)) / $MARKET.reserves[r].price
+          : collateralBalances[r];
+      if (maxWithdrawAmounts[r] > collateralBalances[r]) {
+        maxWithdrawAmounts[r] = collateralBalances[r];
+      }
+
       // Borrow data
       obligation = getObligationData();
       belowMinCRatio = obligation.depositedValue / obligation.borrowedValue <= $MARKET.minColRatio;
       noDeposits = !obligation.depositedValue;
-      assetIsCurrentDeposit = collateralBalances[$CURRENT_RESERVE.abbrev] > 0;
-      assetIsCurrentBorrow = loanBalances[$CURRENT_RESERVE.abbrev] > 0;
-      maxBorrowAmount = ((obligation.depositedValue / $MARKET.minColRatio) - obligation.borrowedValue) / $CURRENT_RESERVE.price;
-      if (maxBorrowAmount > $CURRENT_RESERVE.availableLiquidity.uiAmountFloat) {
-        maxBorrowAmount = $CURRENT_RESERVE.availableLiquidity.uiAmountFloat;
+      assetsAreCurrentDeposit[r] = collateralBalances[r] > 0;
+      assetsAreCurrentBorrow[r] = loanBalances[r] > 0;
+      maxBorrowAmounts[r] = ((obligation.depositedValue / $MARKET.minColRatio) - obligation.borrowedValue) / $MARKET.reserves[r].price;
+      if (maxBorrowAmounts[r] > $MARKET.reserves[r].availableLiquidity.uiAmountFloat) {
+        maxBorrowAmounts[r] = $MARKET.reserves[r].availableLiquidity.uiAmountFloat;
       }
+    };
 
-      // Withdraw data
-      maxWithdrawAmount = (obligation.depositedValue - ($MARKET.minColRatio * obligation.borrowedValue)) / $CURRENT_RESERVE.price;
-      if (maxWithdrawAmount > collateralBalances[$CURRENT_RESERVE.abbrev]) {
-        maxWithdrawAmount = collateralBalances[$CURRENT_RESERVE.abbrev];
-      }
-
-      // Set adjusted ratio to current ratio
-      if (!adjustedRatio && obligation.colRatio) {
-        adjustedRatio = obligation.colRatio;
-      }
+    // Set adjusted ratio to current ratio
+    if (!adjustedRatio && obligation.colRatio) {
+      adjustedRatio = obligation.colRatio;
     }
 
     // Check if user's current position shouldn't allow trades
@@ -234,7 +236,7 @@
   // Check scenario and submit trade
   const checkSubmit = () => {
     if (!disabledInput) {
-      if (inputAmount && adjustedRatio <= $MARKET.minColRatio) {
+      if ((obligation?.borrowedValue || $TRADE_ACTION === 'borrow') && inputAmount && adjustedRatio <= $MARKET.minColRatio) {
         COPILOT.set({
           suggestion: {
             good: false,
@@ -312,7 +314,7 @@
         return;
       }
 
-       if ((adjustedRatio && Math.ceil((adjustedRatio * 1000) / 1000) < $MARKET.minColRatio) || inputAmount > maxBorrowAmount) {
+       if ((adjustedRatio && Math.ceil((adjustedRatio * 1000) / 1000) < $MARKET.minColRatio) || inputAmount > maxBorrowAmounts[$CURRENT_RESERVE.abbrev]) {
         inputAmount = null;
         inputError = dictionary[$PREFERRED_LANGUAGE].cockpit.belowMinCRatio;
         sendingTrade = false;
@@ -639,12 +641,12 @@
               </p>
             {:else if $TRADE_ACTION === 'withdraw'}
               <p>
-                {currencyFormatter(maxWithdrawAmount, false, $CURRENT_RESERVE.decimals)} 
+                {currencyFormatter(maxWithdrawAmounts[$CURRENT_RESERVE.abbrev], false, $CURRENT_RESERVE.decimals)} 
                 {$CURRENT_RESERVE.abbrev}
               </p>
             {:else if $TRADE_ACTION === 'borrow'}
               <p>
-                {currencyFormatter(maxBorrowAmount, false, $CURRENT_RESERVE.decimals)} 
+                {currencyFormatter(maxBorrowAmounts[$CURRENT_RESERVE.abbrev], false, $CURRENT_RESERVE.decimals)} 
                 {$CURRENT_RESERVE.abbrev}
               </p>
             {:else if $TRADE_ACTION === 'repay'}

@@ -105,6 +105,7 @@ span {
 	-webkit-text-fill-color: transparent !important;
 }
 .disabled {
+  cursor: not-allowed !important;
   opacity: var(--disabled-opacity);
 }
 .bicyclette {
@@ -181,15 +182,15 @@ input[type=number] {
 .trade-input {
   position: relative;
 }
-.trade-input.disabled input{
-  cursor: not-allowed !important;
-}
 .trade-input input {
   width: 250px;
   border-top-right-radius: 0px;
   border-bottom-right-radius: 0px;
   padding-left: 50px;
   padding-right: 80px;
+}
+.trade-input.disabled input{
+  cursor: not-allowed !important;
 }
 .trade-input img {
   width: 25px;
@@ -254,9 +255,7 @@ input[type=number] {
   color: var(--white);
   -webkit-text-fill-color: unset !important;
 }
-.disabled { 
-  cursor: not-allowed !important;
-}
+
 /* Views */
 .view-container {
 	width: clamp(250px, 95%, 1200px);
