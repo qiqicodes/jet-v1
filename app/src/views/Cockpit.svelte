@@ -490,10 +490,11 @@
     </div>
     <Datatable settings={tableSettings} data={tableData}>
       <thead>
-        <th data-key="abbrev">
+        <th data-key="name">
           {dictionary[$PREFERRED_LANGUAGE].cockpit.asset} 
         </th>
-        <th class="native-toggle">
+        <th data-key="abbrev"
+          class="native-toggle">
           <Toggle onClick={() => NATIVE.set(!$NATIVE)}
             active={!$NATIVE} 
             native 
@@ -518,13 +519,13 @@
               })}>
           </i>
         </th>
-        <th data-key="walletBalance">
+        <th>
           {dictionary[$PREFERRED_LANGUAGE].cockpit.walletBalance}
         </th>
-        <th data-key="amountDeposited">
+        <th>
           {dictionary[$PREFERRED_LANGUAGE].cockpit.amountDeposited}
         </th>
-        <th data-key="amountBorrowed">
+        <th>
           {dictionary[$PREFERRED_LANGUAGE].cockpit.amountBorrowed}
         </th>
         <th>
