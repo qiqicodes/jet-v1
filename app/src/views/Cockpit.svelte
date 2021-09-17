@@ -525,16 +525,16 @@
               })}>
           </i>
         </th>
-        <th>
+        <th data-key="">
           {dictionary[$PREFERRED_LANGUAGE].cockpit.walletBalance}
         </th>
-        <th>
+        <th data-key="">
           {dictionary[$PREFERRED_LANGUAGE].cockpit.amountDeposited}
         </th>
-        <th>
+        <th data-key="">
           {dictionary[$PREFERRED_LANGUAGE].cockpit.amountBorrowed}
         </th>
-        <th>
+        <th data-key="">
           <!--Empty column for arrow-->
         </th>
       </thead>
@@ -606,7 +606,8 @@
               )}
             </td>
             <!--Faucet for testing if in development-->
-            {#if inDevelopment}
+            <!--Replace with inDevelopment for mainnet-->
+            {#if true}
               <td class="faucet" on:click={() => doAirdrop($rows[i])}>
                 <i class="text-gradient fas fa-parachute-box"
                   title={`Airdrop ${$rows[i].abbrev}`}
