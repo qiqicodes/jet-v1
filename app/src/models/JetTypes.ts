@@ -81,8 +81,8 @@ export interface Reserve {
   marketSize: TokenAmount,
   outstandingDebt: TokenAmount,
   utilizationRate: number,
-  depositAPY: number,
-  borrowAPR: number,
+  depositRate: number,
+  borrowRate: number,
   maximumLTV: number,
   /** The bonus awarded to liquidators when repaying a loan in exchange for a
   collateral asset. */

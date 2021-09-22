@@ -140,11 +140,7 @@
     }
 
     if ($TRADE_ACTION === 'deposit') {
-      if ($CURRENT_RESERVE.abbrev === 'SOL' && walletBalances[$CURRENT_RESERVE.abbrev]?.uiAmountFloat > 0.02) {
-        maxInputValue = walletBalances[$CURRENT_RESERVE.abbrev]?.uiAmountFloat - 0.02;
-      } else {
-        maxInputValue = walletBalances[$CURRENT_RESERVE.abbrev]?.uiAmountFloat;
-      }
+      maxInputValue = walletBalances[$CURRENT_RESERVE.abbrev]?.uiAmountFloat;
     } else if ($TRADE_ACTION === 'withdraw') {
       maxInputValue = maxWithdrawAmounts[$CURRENT_RESERVE.abbrev];
     } else if ($TRADE_ACTION === 'borrow') {
@@ -247,7 +243,16 @@
 
   // Check scenario and submit trade
   const checkSubmit = () => {
-    if (!disabledInput) {
+      // If depositing all SOL, inform user about insufficient lamports and reject 
+    if ($CURRENT_RESERVE?.abbrev === 'SOL' && walletBalances[$CURRENT_RESERVE.abbrev]?.uiAmountFloat === inputAmount) {
+        inputAmount = null;
+        COPILOT.set({
+          suggestion: {
+            good: false,
+            detail: dictionary[$PREFERRED_LANGUAGE].cockpit.insufficientLamports
+          }
+        });
+      } else if (!disabledInput) {
       // If trade would result in c-ratio below min ratio, inform user and reject
       if ((obligation?.borrowedValue || $TRADE_ACTION === 'borrow') && adjustedRatio < $MARKET.minColRatio) {
         COPILOT.set({
@@ -369,7 +374,6 @@
         : Amount.tokens(repayLamports);
       [ok, txid] = await repay($CURRENT_RESERVE.abbrev, repayAmount);
     }
-    
     
     if (ok && txid) {
       COPILOT.set({
@@ -512,19 +516,19 @@
         <th data-key="availableLiquidity">
           {dictionary[$PREFERRED_LANGUAGE].cockpit.availableLiquidity}
         </th>
-        <th data-key="depositAPY">
-          {dictionary[$PREFERRED_LANGUAGE].cockpit.depositAPY}
+        <th data-key="depositRate">
+          {dictionary[$PREFERRED_LANGUAGE].cockpit.depositRate}
           <i class="info far fa-question-circle"
               on:click={() => COPILOT.set({
-                definition: definitions[$PREFERRED_LANGUAGE].depositAPY
+                definition: definitions[$PREFERRED_LANGUAGE].depositRate
               })}>
           </i>
         </th>
-        <th data-key="borrowAPR" class="datatable-border-right">
-          {dictionary[$PREFERRED_LANGUAGE].cockpit.borrowAPR}
+        <th data-key="borrowRate" class="datatable-border-right">
+          {dictionary[$PREFERRED_LANGUAGE].cockpit.borrowRate}
           <i class="info far fa-question-circle"
               on:click={() => COPILOT.set({
-                definition: definitions[$PREFERRED_LANGUAGE].borrowAPR
+                definition: definitions[$PREFERRED_LANGUAGE].borrowRate
               })}>
           </i>
         </th>
@@ -573,11 +577,11 @@
               )}
             </td>
             <td on:click={() => changeReserve($rows[i])}>
-              {$rows[i].depositAPY ? ($rows[i].depositAPY * 100).toFixed(2) : 0}%
+              {$rows[i].depositRate ? ($rows[i].depositRate * 100).toFixed(2) : 0}%
             </td>
             <td on:click={() => changeReserve($rows[i])} 
               class="datatable-border-right">
-              {$rows[i].borrowAPR ? ($rows[i].borrowAPR * 100).toFixed(2) : 0}%
+              {$rows[i].borrowRate ? ($rows[i].borrowRate * 100).toFixed(2) : 0}%
             </td>
             <td class:dt-balance={walletBalances[$rows[i].abbrev]?.uiAmountFloat} 
               on:click={() => changeReserve($rows[i])}>

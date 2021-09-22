@@ -72,8 +72,8 @@ export const getMarketAndIDL = async (): Promise<void> => {
       marketSize: TokenAmount.zero(reserveMeta.decimals),
       outstandingDebt: TokenAmount.zero(reserveMeta.decimals),
       utilizationRate: 0,
-      depositAPY: 0,
-      borrowAPR: 0,
+      depositRate: 0,
+      borrowRate: 0,
       maximumLTV: 0,
       liquidationPremium: 0,
       price: 0,
@@ -119,14 +119,17 @@ export const getMarketAndIDL = async (): Promise<void> => {
 export const getWalletAndAnchor = async (provider: WalletProvider): Promise<void> => {
   // Wallet adapter or injected wallet setup
   if (provider.name === 'Phantom' && solWindow.solana.isPhantom) {
-    wallet = new WalletAdapter(solWindow.solana) as Wallet;
+    wallet = solWindow.solana as unknown as Wallet;
   } else if (provider.name === 'Math Wallet' && solWindow.solana.isMathWallet) {
     wallet = solWindow.solana as unknown as MathWallet;
     wallet.publicKey = new anchor.web3.PublicKey(await solWindow.solana.getAccount());
+    wallet.on = (action: string, callback: Function) => callback();
+    wallet.connect = (action: string, callback: Function) => callback();
   } else if (provider.name === 'Solong' && solWindow.solong) {
     wallet = solWindow.solong as unknown as SolongWallet;
     wallet.publicKey = new anchor.web3.PublicKey(await solWindow.solong.selectAccount());
     wallet.on = (action: string, callback: Function) => callback();
+    wallet.connect = (action: string, callback: Function) => callback();
   } else {
     wallet = new WalletAdapter(provider.url) as Wallet;
   };
@@ -150,7 +153,7 @@ export const getWalletAndAnchor = async (provider: WalletProvider): Promise<void
     await getAssetPubkeys();
     await subscribeToAssets(connection, coder, wallet.publicKey);
   });
-  wallet.connect();
+  await wallet.connect();
   return;
 };
 

@@ -30,8 +30,7 @@
         />
         <span class="text-gradient"
           style="font-size: 12px;">
-          {$WALLET.publicKey.toString().substring(0, 4)}..
-          {$WALLET.publicKey.toString().substring(
+          {$WALLET.publicKey.toString().substring(0, 4)}...{$WALLET.publicKey.toString().substring(
             $WALLET.publicKey.toString().length - 4
           )}
         </span>

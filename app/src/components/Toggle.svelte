@@ -111,9 +111,9 @@
     color: var(--white);
   }
   p {
-    font-size: 10px;
+    font-size: 9px;
     text-transform: uppercase;
-    padding-top: 2px;
+    padding-top: 3px;
     padding-right: 6px;
     opacity: 1;
   }
