@@ -264,7 +264,22 @@
           suggestion: {
             good: false,
             detail: dictionary[$PREFERRED_LANGUAGE].cockpit.subjectToLiquidation
-              .replaceAll('{{NEW-C-RATIO}}', currencyFormatter(adjustedRatio * 100, false, 1)),                        
+            .replaceAll('{{NEW-C-RATIO}}', currencyFormatter(adjustedRatio * 100, false, 1))
+            .replaceAll('{{ORIGINATION FEE}}', $CURRENT_RESERVE?.loanOriginationFee ?? 0 /100),                        
+            action: {
+              text: dictionary[$PREFERRED_LANGUAGE].cockpit.confirm,
+              onClick: () => submitTrade()
+            }
+          }
+        });
+      // Inform user that origination fee is attached to every new loan
+      } else if ($TRADE_ACTION === 'borrow') {
+        COPILOT.set({
+          alert: {
+            good: true,
+            header: dictionary[$PREFERRED_LANGUAGE].copilot.alert.headsup,
+            text: dictionary[$PREFERRED_LANGUAGE].copilot.alert.originationFee
+              .replaceAll('{{ORIGINATION FEE}}', $CURRENT_RESERVE?.loanOriginationFee ?? 0 /100),
             action: {
               text: dictionary[$PREFERRED_LANGUAGE].cockpit.confirm,
               onClick: () => submitTrade()
