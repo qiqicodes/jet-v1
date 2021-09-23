@@ -666,7 +666,7 @@ export const definitions: any = {
       definition: "The value of the loan that is owed or due to the Protocol."
     },
     collateralizationRatio: {
-      term: "Collateralization Ratio Or C-Ratio",
+      term: "Collateralization Ratio",
       definition: "The value of your collateral divided by the value of your debt. You are required to over-collateralize your loan, i.e. the fair market value of your deposited assets must exceed the value of the amount you are allowed to borrow. This provides for a reduction because the Protocol may seize this collateral in order to recoup the value of the loan in the event of default on a loan. See also, Maximum LTV."
     },
     adjustedCollateralizationRatio: {

@@ -53,6 +53,7 @@
     <div class="modal-section flex align-center justify-evenly">
       <PercentageChart percentage={reserveDetail.utilizationRate * 100} 
         text={dictionary[$PREFERRED_LANGUAGE].reserveDetail.utilisationRate.toUpperCase()} 
+        percentageDefinition={definitions[$PREFERRED_LANGUAGE].utilisationRate}
       />
       <div class="flex align-start justify-center column">
         <div class="flex align-start justify-center" style="margin: var(--spacing-sm);">
