@@ -16,7 +16,7 @@
 :root {
   --black: #444444;
   --grey: #d8dfec;
-	--white: #e4ebf5;
+	--white: #e6edf7; /* e4ebf5 */
 	--jet-green: #44a88c; /* 53bd9f */
 	--jet-blue: #2a97c2; /* 32a5d3 */
   --success: #44a88c; /* 53bd9f */
@@ -25,8 +25,8 @@
   --input-color: rgba(26, 73, 94, 0.7);
   --gradient: linear-gradient(135deg, var(--jet-green) 25%, var(--jet-blue) 85%);
 
-  --light-shadow: rgba(255, 255, 255, 1);
-  --dark-shadow: rgba(190, 200, 228, 1);
+  --light-shadow: rgba(255, 255, 255, 0.85);
+  --dark-shadow: rgba(175, 186, 214, 0.85);
   --neu-shadow: -2px -2px 4px var(--light-shadow), 2px 2px 4px var(--dark-shadow);
   --neu-shadow-inset: inset -2px -2px 2.5px var(--light-shadow), inset 2px 2px 2.5px var(--dark-shadow);
   --neu-shadow-inset-low: inset -1.5px -1.5px 2px var(--light-shadow), inset 1.5px 1.5px 2px var(--dark-shadow);
@@ -180,20 +180,20 @@ input::-webkit-inner-spin-button {
 input[type=number] {
   -moz-appearance: textfield;
 }
-.trade-input {
+.submit-input {
   position: relative;
 }
-.trade-input input {
+.submit-input input {
   width: 250px;
   border-top-right-radius: 0px;
   border-bottom-right-radius: 0px;
   padding-left: 50px;
   padding-right: 80px;
 }
-.trade-input.disabled input{
+.submit-input.disabled input{
   cursor: not-allowed !important;
 }
-.trade-input img {
+.submit-input img {
   width: 25px;
   height: auto;
   position: absolute;
@@ -202,25 +202,25 @@ input[type=number] {
   left: var(--spacing-md);
   opacity: var(--disabled-opacity);
 }
-.trade-input .asset-abbrev-usd {
+.submit-input .asset-abbrev-usd {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
   right: var(--spacing-md);
   padding: unset;
 }
-.trade-input span {
+.submit-input span {
   font-weight: 400 !important;
   font-size: 15px !important;
   color: var(--black) !important;
 }
-.trade-input .asset-abbrev-usd span:last-of-type {
+.submit-input .asset-abbrev-usd span:last-of-type {
   font-size: 10px !important;
 }
-.trade-input input:focus + img, .trade-input.active img {
+.submit-input input:focus + img, .submit-input.active img {
   opacity: 1;
 }
-.trade-input.active input {
+.submit-input.active input {
   box-shadow: var(--neu-shadow-inset-low);
 }
 .input-error {
@@ -229,7 +229,7 @@ input[type=number] {
 .input-error::placeholder {
   color: var(--failure);
 }
-.trade-input-btn {
+.submit-input-btn {
   height: 43px;
   border: 2px solid var(--white);
   border-left: none;
@@ -238,21 +238,21 @@ input[type=number] {
   padding: 0 var(--spacing-md);
   cursor: pointer;
 }
-.trade-input-btn:active, .trade-input-btn.active {
+.submit-input-btn:active, .submit-input-btn.active {
   background: var(--white);
 }
-.trade-input-btn.disabled:active {
+.submit-input-btn.disabled:active {
   background: unset;
 }
-.trade-input-btn i {
+.submit-input-btn i {
   color: var(--white);
 }
-.trade-input-btn:active i, .trade-input-btn.active i {
+.submit-input-btn:active i, .submit-input-btn.active i {
   background-image: var(--gradient) !important;
   -webkit-background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
 }
-.trade-input-btn.disabled:active i {
+.submit-input-btn.disabled:active i {
   color: var(--white);
   -webkit-text-fill-color: unset !important;
 }
@@ -528,23 +528,23 @@ input[type=number] {
     height: calc((var(--vh, 1vh) * 100) - var(--mobile-nav-height));
 	  margin-left: 0;
   }
-  .trade-input-container {
+  .submit-input-container {
     padding: var(--spacing-xs) 0;
   }
-  .trade-input input {
+  .submit-input input {
     width: 160px;
     padding-left: 30px;
     padding-right: 35px;
     font-size: 15px;
   }
-  .trade-input img {
+  .submit-input img {
     width: 18px;
     left: var(--spacing-sm);
   }
-  .trade-input span {
+  .submit-input span {
     font-size: 10px !important;
   }
-  .trade-input-btn {
+  .submit-input-btn {
     height: 37px;
   }
   .view-container {

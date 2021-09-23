@@ -416,6 +416,11 @@
       updateTime = currentTime + 3000;
     }
 
+    // If no current reserve, set to SOL
+    if (!$CURRENT_RESERVE) {
+      CURRENT_RESERVE.set($MARKET.reserves[0])
+    }
+
     // Add search icon to table search input
     if (!document.querySelector('.dt-search i')) {
       const searchIcon = document.createElement('i');
@@ -742,7 +747,7 @@
             {dictionary[$PREFERRED_LANGUAGE].cockpit.max.toUpperCase()}
           </span>
         </div>
-        <div class="trade-input flex align-center justify-center"
+        <div class="submit-input flex align-center justify-center"
           class:active={inputAmount} class:disabled={disabledInput}>
           <input on:keyup={() => adjustCollateralizationRatio()}
             on:keypress={(e) => {
@@ -771,7 +776,7 @@
             </span>
           </div>
         </div>
-        <div class="trade-input-btn flex align-center justify-center"
+        <div class="submit-input-btn flex align-center justify-center"
           class:active={sendingTrade}
           class:disabled={disabledInput}
           on:click={() => checkSubmit()}>

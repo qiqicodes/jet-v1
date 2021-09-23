@@ -13,7 +13,7 @@
   <i class="text-gradient jet-icons"
     style={icon === '✔' || icon === '✈'
       ? 'padding: 0 3px 3px 0;' 
-        : 'padding: 0 0 3px 3px' }>
+        : 'padding: 0 0 3px 0' }>
     {icon}
   </i>
   {#if text}
@@ -61,6 +61,5 @@
   .text {
     padding: 0 var(--spacing-xs);
     width: 100px;
-    justify-content: flex-start;
   }
 </style>
