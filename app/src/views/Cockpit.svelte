@@ -255,14 +255,31 @@
       } else if (!disabledInput) {
       // If trade would result in c-ratio below min ratio, inform user and reject
       if ((obligation?.borrowedValue || $TRADE_ACTION === 'borrow') && adjustedRatio < $MARKET.minColRatio) {
-        COPILOT.set({
-          suggestion: {
+          if (adjustedRatio < obligation?.colRatio) {
+            COPILOT.set({
+            suggestion: {
             good: false,
             detail: dictionary[$PREFERRED_LANGUAGE].cockpit.rejectTrade
               .replaceAll('{{NEW-C-RATIO}}', currencyFormatter(adjustedRatio * 100, false, 1))
               .replaceAll('{{JET MIN C-RATIO}}', $MARKET.minColRatio * 100)
           }
         });
+      } else {
+        // If repayment still results in undercollateralization, inform user
+        COPILOT.set({
+          suggestion: {
+            good: false,
+            detail: dictionary[$PREFERRED_LANGUAGE].cockpit.repayUndercollateralized
+              .replaceAll('{{NEW-C-RATIO}}', currencyFormatter(adjustedRatio * 100, false, 1))
+              .replaceAll('{{JET MIN C-RATIO}}', $MARKET.minColRatio * 100),
+            action: {
+              text: dictionary[$PREFERRED_LANGUAGE].cockpit.confirm,
+              onClick: () => submitTrade()
+            }
+          }
+        });
+      }
+    }
     // If trade would result in possible undercollateralization, inform user
     } else if ((obligation?.borrowedValue || $TRADE_ACTION === 'borrow') && adjustedRatio <= $MARKET.minColRatio + 0.2 && adjustedRatio >= $MARKET.minColRatio) {
         COPILOT.set({
@@ -279,7 +296,6 @@
       } else {
         submitTrade();
       }
-    }
   };
 
   // Check user input and submit trade RPC call
