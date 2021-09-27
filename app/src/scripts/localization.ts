@@ -108,8 +108,11 @@ export const dictionary: any = {
   en: {
     language: "English",
     loading: {
-      transactions: "Sending Transactions...",
-      connectingWallet: "Connecting Wallet..."
+      initializing: "Starting Jet Engines",
+      fetchingReserves: "Fetching Reserve Data",
+      fetchingAccount: "Fetching Account Data",
+      transactions: "Sending Transactions",
+      connectingWallet: "Connecting Wallet",
     },
     nav: {
       cockpit: "Cockpit",
@@ -150,7 +153,7 @@ export const dictionary: any = {
       noLiquidity: "Not enough liquidity.",
       minCRatio: "This will put your position at our minimum collateralization ratio, therefore placing your account in liquidation territory. Are you sure?",
       belowMinRatio: "You are undercollateralized. Deposit or repay your debt to avoid liquidation.",
-      subjectToLiquidation: "This trade lowers your collateralization ratio to {{NEW-C-RATIO}}%, which makes you subject to liquidation. There is also an origination fee of {{ORIGINATION FEE}}% attached to this loan. Would you still like to borrow?",
+      subjectToLiquidation: "This trade lowers your collateralization ratio to {{NEW-C-RATIO}}%, which makes you subject to liquidation. Would you still like to borrow?",
       confirm: "Confirm",
       repay: "Repay",
       amountOwed: "Amount Owed",
@@ -246,8 +249,11 @@ export const dictionary: any = {
   zh: {
     language: "中文",
     loading: {
-      transactions: "交易发送中。。。",
-      connectingWallet: "钱包连结中。。。"
+      initializing: "Starting Jet Engines",
+      fetchingReserves: "Fetching Reserve Data",
+      fetchingAccount: "Fetching Account Data",
+      transactions: "交易发送中",
+      connectingWallet: "钱包连结中"
     },
     nav: {
       cockpit: "驾驶舱",
@@ -384,8 +390,11 @@ export const dictionary: any = {
   ru: {
     language: "Русский",
     loading: {
-      transactions: "Транзакции отправляются...",
-      connectingWallet: "Кошелёк подключается..."
+      initializing: "Starting Jet Engines",
+      fetchingReserves: "Fetching Reserve Data",
+      fetchingAccount: "Fetching Account Data",
+      transactions: "Транзакции отправляются",
+      connectingWallet: "Кошелёк подключается"
     },
     nav: {
       cockpit: "Кабина",
@@ -522,8 +531,11 @@ export const dictionary: any = {
   tr: {
     language: "Türkçe",
     loading: {
-      transactions: "İşleminiz yapılıyor...",
-      connectingWallet: "Cüzdan bağlanıyor..."
+      initializing: "Starting Jet Engines",
+      fetchingReserves: "Fetching Reserve Data",
+      fetchingAccount: "Fetching Account Data",
+      transactions: "İşleminiz yapılıyor",
+      connectingWallet: "Cüzdan bağlanıyor"
     },
     nav: {
       cockpit: "Kokpit",
