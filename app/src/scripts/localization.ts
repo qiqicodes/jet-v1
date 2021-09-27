@@ -169,7 +169,7 @@ export const dictionary: any = {
       noDebtForRepay: "You don't owe any {{ASSET}}.",
       rejectTrade: "This trade would lower your collateralization ratio to {{NEW-C-RATIO}}%, which would be below our minimum ratio of {{JET MIN C-RATIO}}%.",
       insufficientLamports: "You are depositing all your SOL leaving you no lamports for transaction fees! Please try again with a slightly lower input amount.",
-      repayUndercollateralized: "Your new C-ratio of {{NEW-C-RATIO}} is still under Jet's minimum marketplace collateralization ratio of {{JET MIN C-RATIO}}%. Please consider repaying more to avoid liquidation."
+      stillUndercollateralized: "Your new C-ratio of {{NEW-C-RATIO}}% is still under Jet's minimum marketplace collateralization ratio of {{JET MIN C-RATIO}}%. Please consider repaying more to avoid liquidation."
     },
     settings: {
       title: "Settings",
@@ -307,7 +307,7 @@ export const dictionary: any = {
       noDebtForRepay: "您不欠任何 {{ASSET}}.",
       rejectTrade: "这个交易手续会降低您的质押率到 {{NEW-C-RATIO}}%, 而且会比我们的对低质押率限制 {{JET MIN C-RATIO}} 还低.",
       insufficientLamports: "You are depositing all your SOL leaving you no lamports for transaction fees! Please try again with a slightly lower input amount.",
-      repayUndercollateralized: "Your new C-ratio of {{NEW-C-RATIO}} is still under Jet's minimum marketplace collateralization ratio of {{JET MIN C-RATIO}}%. Please consider repaying more to avoid liquidation."
+      stillUndercollateralized: "Your new C-ratio of {{NEW-C-RATIO}} is still under Jet's minimum marketplace collateralization ratio of {{JET MIN C-RATIO}}%. Please consider repaying more to avoid liquidation."
     },
     settings: {
       title: "设定",
@@ -445,7 +445,7 @@ export const dictionary: any = {
       noDebtForRepay: "Вы не дожны {{ASSET}}.",
       rejectTrade: "Сделка понизит ваш коэфициент залог {{NEW-C-RATIO}}%, что будет ниже минимального уровня {{JET MIN C-RATIO}}%",
       insufficientLamports: "You are depositing all your SOL leaving you no lamports for transaction fees! Please try again with a slightly lower input amount.",
-      repayUndercollateralized: "Your new C-ratio of {{NEW-C-RATIO}} is still under Jet's minimum marketplace collateralization ratio of {{JET MIN C-RATIO}}%. Please consider repaying more to avoid liquidation."
+      stillUndercollateralized: "Your new C-ratio of {{NEW-C-RATIO}} is still under Jet's minimum marketplace collateralization ratio of {{JET MIN C-RATIO}}%. Please consider repaying more to avoid liquidation."
     },
     settings: {
       title: "Настройки",
@@ -583,7 +583,7 @@ export const dictionary: any = {
       noDebtForRepay: "You don't owe any {{ASSET}}.",
       rejectTrade: "This trade would lower your collateralization ratio to {{NEW-C-RATIO}}%, which would be below our minimum ratio of {{JET MIN C-RATIO}}%.",
       insufficientLamports: "You are depositing all your SOL leaving you no lamports for transaction fees! Please try again with a slightly lower input amount.",
-      repayUndercollateralized: "Your new C-ratio of {{NEW-C-RATIO}} is still under Jet's minimum marketplace collateralization ratio of {{JET MIN C-RATIO}}%. Please consider repaying more to avoid liquidation."
+      stillUndercollateralized: "Your new C-ratio of {{NEW-C-RATIO}} is still under Jet's minimum marketplace collateralization ratio of {{JET MIN C-RATIO}}%. Please consider repaying more to avoid liquidation."
     },
     settings: {
       title: "Ayarlar",

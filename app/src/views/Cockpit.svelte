@@ -265,11 +265,11 @@
           }
         });
       } else {
-        // If repayment still results in undercollateralization, inform user
+        // If this trade still results in undercollateralization, inform user
         COPILOT.set({
           suggestion: {
             good: false,
-            detail: dictionary[$PREFERRED_LANGUAGE].cockpit.repayUndercollateralized
+            detail: dictionary[$PREFERRED_LANGUAGE].cockpit.stillUndercollateralized
               .replaceAll('{{NEW-C-RATIO}}', currencyFormatter(adjustedRatio * 100, false, 1))
               .replaceAll('{{JET MIN C-RATIO}}', $MARKET.minColRatio * 100),
             action: {
