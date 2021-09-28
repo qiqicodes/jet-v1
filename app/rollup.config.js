@@ -93,7 +93,8 @@ export default {
       compact: true
     }),
     globals(),
-    builtins()
+    builtins(),
+    json()
   ],
   // suppress eval warning
   onwarn(warning, warn) {
