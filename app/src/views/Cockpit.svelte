@@ -36,6 +36,7 @@
   let disabledMessage: string = '';
   let reserveDetail: Reserve | null = null;
   let sendingTrade: boolean = false;
+  let showAirdrop: boolean = inDevelopment || window.location.hostname.indexOf('devnet') !== -1;
 
   // Datatable settings
   let tableData: Reserve[] = [];
@@ -82,6 +83,10 @@
 
   // Change current reserve
   const changeReserve = (reserve: Reserve): void => {
+    if (sendingTrade) {
+      return;
+    }
+
     inputError = '';
     inputAmount = null;
     CURRENT_RESERVE.set(reserve);
@@ -185,7 +190,6 @@
              : 1
       );
     }
-    
   };
 
   // Update all market/user data
@@ -245,7 +249,8 @@
   // Check scenario and submit trade
   const checkSubmit = () => {
     // If depositing all SOL, inform user about insufficient lamports and reject 
-    if ($CURRENT_RESERVE?.abbrev === 'SOL' && walletBalances[$CURRENT_RESERVE.abbrev]?.uiAmountFloat === inputAmount) {
+    if ($CURRENT_RESERVE?.abbrev === 'SOL' && inputAmount 
+      && (walletBalances[$CURRENT_RESERVE.abbrev]?.uiAmountFloat - 0.02) <= inputAmount) {
       COPILOT.set({
         suggestion: {
           good: false,
@@ -666,7 +671,7 @@
             </td>
             <!--Faucet for testing if in development-->
             <!--Replace with inDevelopment for mainnet-->
-            {#if inDevelopment}
+            {#if showAirdrop}
               <td class="faucet" on:click={() => doAirdrop($rows[i])}>
                 <i class="text-gradient fas fa-parachute-box"
                   title={`Airdrop ${$rows[i].abbrev}`}
@@ -674,11 +679,11 @@
                 </i>
               </td>
             {:else}
-            <td on:click={() => changeReserve($rows[i])}>
-                <i class="text-gradient jet-icons">
-                  ➜
-                </i>
-              </td>
+              <td on:click={() => changeReserve($rows[i])}>
+                  <i class="text-gradient jet-icons">
+                    ➜
+                  </i>
+                </td>
             {/if}
           </tr>
           <tr class="datatable-spacer">
@@ -691,6 +696,10 @@
       <div class="trade-action-select-container flex align-center justify-between">
         {#each ['deposit', 'withdraw', 'borrow', 'repay'] as action}
           <div on:click={() => {
+              if (sendingTrade) {
+                return;
+              }
+
               inputAmount = null;
               inputError = '';
               TRADE_ACTION.set(action);
