@@ -5,15 +5,17 @@
   import { Datatable, rows } from 'svelte-simple-datatables';
   import { NATIVE_MINT } from '@solana/spl-token';
   import type { Reserve, Obligation } from '../models/JetTypes';
-  import { TRADE_ACTION, MARKET, ASSETS, CURRENT_RESERVE, NATIVE, COPILOT, PREFERRED_LANGUAGE, WALLET_INIT, WALLET } from '../store';
-  import { inDevelopment, airdrop, deposit, withdraw, borrow, repay } from '../scripts/jet';
+  import { TRADE_ACTION, MARKET, ASSETS, CURRENT_RESERVE, NATIVE, COPILOT, PREFERRED_LANGUAGE, WALLET_INIT, INIT_FAILED, LIQUIDATION_WARNED } from '../store';
+  import { inDevelopment, airdrop, deposit, withdraw, borrow, repay, getTransactionLogs } from '../scripts/jet';
   import { currencyFormatter, totalAbbrev, getObligationData, TokenAmount, Amount } from '../scripts/utils';
+  import { generateCopilotSuggestion } from '../scripts/copilot';
   import { dictionary, definitions } from '../scripts/localization'; 
   import { explorerUrl } from '../scripts/programUtil';
   import Loader from '../components/Loader.svelte';
   import ConnectWallet from '../components/ConnectWallet.svelte';
   import ReserveDetail from '../components/ReserveDetail.svelte';
   import Toggle from '../components/Toggle.svelte';
+  import InitFailed from '../components/InitFailed.svelte';
 
   let marketTVL: number = 0;
   let walletBalances: Record<string, TokenAmount> = {};
@@ -229,7 +231,7 @@
     };
 
     // Set adjusted ratio to current ratio
-    if (!adjustedRatio && obligation.colRatio) {
+    if (!adjustedRatio && obligation?.colRatio) {
       adjustedRatio = obligation.colRatio;
     }
 
@@ -244,26 +246,40 @@
   const checkSubmit = () => {
     // If depositing all SOL, inform user about insufficient lamports and reject 
     if ($CURRENT_RESERVE?.abbrev === 'SOL' && walletBalances[$CURRENT_RESERVE.abbrev]?.uiAmountFloat === inputAmount) {
-      inputAmount = null;
       COPILOT.set({
         suggestion: {
           good: false,
           detail: dictionary[$PREFERRED_LANGUAGE].cockpit.insufficientLamports
         }
       });
-    } else if (!disabledInput) {
-      // If trade would result in c-ratio below min ratio, inform user and reject
-      if ((obligation?.borrowedValue || $TRADE_ACTION === 'borrow') && adjustedRatio < $MARKET.minColRatio) {
+    // If trade would result in c-ratio below min ratio, inform user and reject
+    } else if ((obligation?.borrowedValue || $TRADE_ACTION === 'borrow') && adjustedRatio < $MARKET.minColRatio) {
+      if (adjustedRatio < obligation?.colRatio) {
         COPILOT.set({
-          suggestion: {
-            good: false,
-            detail: dictionary[$PREFERRED_LANGUAGE].cockpit.rejectTrade
-              .replaceAll('{{NEW-C-RATIO}}', currencyFormatter(adjustedRatio * 100, false, 1))
-              .replaceAll('{{JET MIN C-RATIO}}', $MARKET.minColRatio * 100)
+        suggestion: {
+        good: false,
+        detail: dictionary[$PREFERRED_LANGUAGE].cockpit.rejectTrade
+          .replaceAll('{{NEW-C-RATIO}}', currencyFormatter(adjustedRatio * 100, false, 1))
+          .replaceAll('{{JET MIN C-RATIO}}', $MARKET.minColRatio * 100)
+        }
+      });
+    } else {
+      // If this trade still results in undercollateralization, inform user
+      COPILOT.set({
+        suggestion: {
+          good: false,
+          detail: dictionary[$PREFERRED_LANGUAGE].cockpit.stillUndercollateralized
+            .replaceAll('{{NEW-C-RATIO}}', currencyFormatter(adjustedRatio * 100, false, 1))
+            .replaceAll('{{JET MIN C-RATIO}}', $MARKET.minColRatio * 100),
+          action: {
+            text: dictionary[$PREFERRED_LANGUAGE].cockpit.confirm,
+            onClick: () => submitTrade()
           }
-        });
-      // If trade would result in possible undercollateralization, inform user
-      } else if ((obligation?.borrowedValue || $TRADE_ACTION === 'borrow') && adjustedRatio <= $MARKET.minColRatio + 0.2 && adjustedRatio >= $MARKET.minColRatio) {
+        }
+      });
+    }
+    // If trade would result in possible undercollateralization, inform user
+    } else if ((obligation?.borrowedValue || $TRADE_ACTION === 'borrow') && adjustedRatio <= $MARKET.minColRatio + 0.2 && adjustedRatio >= $MARKET.minColRatio) {
         COPILOT.set({
           suggestion: {
             good: false,
@@ -278,7 +294,6 @@
       } else {
         submitTrade();
       }
-    }
   };
 
   // Check user input and submit trade RPC call
@@ -399,6 +414,7 @@
 
     updateValues();
     adjustCollateralizationRatio();
+    getTransactionLogs();
     sendingTrade = false;
     return;
   };
@@ -419,11 +435,6 @@
       updateTime = currentTime + 3000;
     }
 
-    // If no current reserve, set to SOL
-    if (!$CURRENT_RESERVE) {
-      CURRENT_RESERVE.set($MARKET.reserves[0])
-    }
-
     // Add search icon to table search input
     if (!document.querySelector('.dt-search i')) {
       const searchIcon = document.createElement('i');
@@ -436,10 +447,15 @@
       market.minColRatio = 1.3;
       return market;
     });
+
+    // If user is subject to liquidation, warn them once
+    if ($WALLET_INIT && !$LIQUIDATION_WARNED && obligation?.borrowedValue && obligation?.colRatio <= $MARKET.minColRatio) {
+      generateCopilotSuggestion();
+    }
   }
 </script>
 
-{#if $MARKET && $CURRENT_RESERVE}
+{#if $MARKET && $CURRENT_RESERVE && !$INIT_FAILED}
   <div class="view-container flex justify-center column">
     <h1 class="view-title text-gradient">
       {dictionary[$PREFERRED_LANGUAGE].cockpit.title}
@@ -469,9 +485,9 @@
           </div>
           <h1 class="view-header"
             style={`margin-bottom: -20px; 
-            ${obligation?.borrowedValue && (obligation?.colRatio <= $MARKET.minColRatio) 
+            ${$WALLET_INIT ? (obligation?.borrowedValue && (obligation?.colRatio <= $MARKET.minColRatio) 
               ? 'color: var(--failure);' 
-                : 'color: var(--success);'}`}>
+                : 'color: var(--success);') : ''}`}>
             {#if $WALLET_INIT}
               {#if obligation?.borrowedValue && obligation?.colRatio > 10}
                 &gt;1000
@@ -495,7 +511,7 @@
             <h2 class="view-subheader">
               {dictionary[$PREFERRED_LANGUAGE].cockpit.totalDepositedValue}
             </h2>
-            <p class="text-gradient bicyclette">
+            <p class={`${$WALLET_INIT ? 'text-gradient' : ''} bicyclette`}>
               {$WALLET_INIT ? totalAbbrev(obligation?.depositedValue ?? 0) : '--'}
             </p>
           </div>
@@ -503,7 +519,7 @@
             <h2 class="view-subheader">
               {dictionary[$PREFERRED_LANGUAGE].cockpit.totalBorrowedValue}
             </h2>
-            <p class="text-gradient bicyclette">
+            <p class={`${$WALLET_INIT ? 'text-gradient' : ''} bicyclette`}>
               {$WALLET_INIT ? totalAbbrev(obligation?.borrowedValue ?? 0) : '--'}
             </p>
           </div>
@@ -592,50 +608,65 @@
               class="datatable-border-right">
               {$rows[i].borrowRate ? ($rows[i].borrowRate * 100).toFixed(2) : 0}%
             </td>
-            <td class:dt-balance={walletBalances[$rows[i].abbrev]?.uiAmountFloat} 
+            <td class:dt-bold={walletBalances[$rows[i].abbrev]?.uiAmountFloat} 
+              class:dt-balance={walletBalances[$rows[i].abbrev]?.uiAmountFloat} 
               on:click={() => changeReserve($rows[i])}>
               {#if $WALLET_INIT}
-                {totalAbbrev(
-                  walletBalances[$rows[i].abbrev]?.uiAmountFloat ?? 0,
-                  $rows[i].price,
-                  $NATIVE,
-                  $rows[i].decimals
-                )}
+                {#if walletBalances[$rows[i].abbrev]?.uiAmountFloat && walletBalances[$rows[i].abbrev]?.uiAmountFloat < 0.0005}
+                  ~0
+                {:else}
+                  {totalAbbrev(
+                    walletBalances[$rows[i].abbrev]?.uiAmountFloat ?? 0,
+                    $rows[i].price,
+                    $NATIVE,
+                    3
+                  )}
+                {/if}
               {:else}
                   --
               {/if}
             </td>
-            <td on:click={() => changeReserve($rows[i])}
+            <td class:dt-bold={collateralBalances[$rows[i].abbrev]} 
+              on:click={() => changeReserve($rows[i])}
               style={collateralBalances[$rows[i].abbrev] ? 
                 'color: var(--jet-green) !important;' : ''}>
               {#if $WALLET_INIT}
-                {totalAbbrev(
-                  collateralBalances[$rows[i].abbrev],
-                  $rows[i].price,
-                  $NATIVE,
-                  $rows[i].decimals
-                )}
+                {#if collateralBalances[$rows[i].abbrev] && collateralBalances[$rows[i].abbrev] < 0.0005}
+                  ~0
+                {:else}
+                  {totalAbbrev(
+                    collateralBalances[$rows[i].abbrev],
+                    $rows[i].price,
+                    $NATIVE,
+                    3
+                  )}
+                {/if}
               {:else}
                   --
               {/if}
             </td>
-            <td on:click={() => changeReserve($rows[i])}
-             style={loanBalances[$rows[i].abbrev] ? 
+            <td class:dt-bold={loanBalances[$rows[i].abbrev]} 
+              on:click={() => changeReserve($rows[i])}
+              style={loanBalances[$rows[i].abbrev] ? 
               'color: var(--jet-blue) !important;' : ''}>
               {#if $WALLET_INIT}
-                {totalAbbrev(
-                  loanBalances[$rows[i].abbrev],
-                  $rows[i].price,
-                  $NATIVE,
-                  $rows[i].decimals
-                )}
+                {#if loanBalances[$rows[i].abbrev] && loanBalances[$rows[i].abbrev] < 0.0005}
+                  ~0
+                {:else}
+                  {totalAbbrev(
+                    loanBalances[$rows[i].abbrev],
+                    $rows[i].price,
+                    $NATIVE,
+                    3
+                  )}
+                {/if}
               {:else}
                 --
               {/if}
             </td>
             <!--Faucet for testing if in development-->
             <!--Replace with inDevelopment for mainnet-->
-            {#if true}
+            {#if inDevelopment}
               <td class="faucet" on:click={() => doAirdrop($rows[i])}>
                 <i class="text-gradient fas fa-parachute-box"
                   title={`Airdrop ${$rows[i].abbrev}`}
@@ -830,8 +861,10 @@
         reserveDetail = null;
       }} />
   {/if}
+{:else if $INIT_FAILED}
+  <InitFailed />
 {:else}
- <Loader fullview text={dictionary[$PREFERRED_LANGUAGE].loading.fetchingAccount} />
+  <Loader fullview />
 {/if}
 
 <style>
