@@ -33,7 +33,7 @@
     "@rollup/plugin-typescript": "^8.2.3",
     "@solana/buffer-layout": "^3.0.0",
     "@solana/spl-token": "^0.1.6",
-    "@solana/web3.js": "^1.24.0",
+    "@solana/web3.js": "^1.29.2",
     "assert": "^2.0.0",
     "body-parser": "^1.19.0",
     "buffer": "^6.0.3",
