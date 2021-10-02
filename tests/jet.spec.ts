@@ -29,9 +29,13 @@ chaiUse(chaiAsPromised.default);
 describe("jet", async () => {
   async function loadReserve(address: PublicKey) {
     const info = await provider.connection.getAccountInfo(address);
-    let reserve = program.coder.accounts.decode<ReserveAccount>("Reserve", info.data);
+    let reserve = program.coder.accounts.decode<ReserveAccount>(
+      "Reserve",
+      info.data
+    );
     const reserveState = ReserveStateLayout.decode(
-      Buffer.from(reserve.state as any as number[])) as ReserveStateStruct;
+      Buffer.from(reserve.state as any as number[])
+    ) as ReserveStateStruct;
     reserve.state = reserveState;
 
     return reserve;
@@ -41,13 +45,18 @@ describe("jet", async () => {
     console.log("accruedUntil:    ", state.accruedUntil.toString());
     console.log("invalidated:     ", state.invalidated);
     console.log("lastUpdated:     ", state.lastUpdated.toString());
-    console.log("outstandingDebt: ", state.outstandingDebt.div(bn(1e15)).toString());
+    console.log(
+      "outstandingDebt: ",
+      state.outstandingDebt.div(bn(1e15)).toString()
+    );
     console.log("totalDeposits:   ", state.totalDeposits.toString());
     console.log("totalLoanNotes:  ", state.totalLoanNotes.toString());
     console.log("uncollectedFees: ", state.uncollectedFees.toString());
   }
 
-  function bn(z: number): BN { return new BN(z); }
+  function bn(z: number): BN {
+    return new BN(z);
+  }
 
   async function checkBalance(tokenAccount: PublicKey): Promise<BN> {
     let info = await provider.connection.getAccountInfo(tokenAccount);
@@ -106,7 +115,7 @@ describe("jet", async () => {
 
   const initialTokenAmount = 1e6 * 1e6;
   const usdcDeposit = initialTokenAmount;
-  const wsolDeposit = usdcDeposit / 100 * 1.25 * 0.9;
+  const wsolDeposit = (usdcDeposit / 100) * 1.25 * 0.9;
 
   async function createTestUser(
     assets: Array<TokenEnv>,
@@ -122,7 +131,7 @@ describe("jet", async () => {
         tokenAccount.address,
         wallet.publicKey,
         [],
-        initialTokenAmount,
+        initialTokenAmount
       );
       return tokenAccount.address;
     };
@@ -344,7 +353,8 @@ describe("jet", async () => {
     const asset = usdc;
     const usdcBorrow = usdcDeposit * 0.8;
     const amount = Amount.tokens(usdcBorrow);
-    const tokenAccountKey = user.tokenAccounts[asset.token.publicKey.toBase58()];
+    const tokenAccountKey =
+      user.tokenAccounts[asset.token.publicKey.toBase58()];
 
     const obligationKey = (
       await client.findDerivedAccount([
@@ -364,9 +374,15 @@ describe("jet", async () => {
 
     await jetMarket.refresh();
     await wsol.reserve.refresh();
-    const txId = await user.client.borrow(asset.reserve, tokenAccountKey, amount);
-    await new Promise(r => setTimeout(r, 500));
-    const tx = await provider.connection.getTransaction(txId, {commitment: "confirmed"});
+    const txId = await user.client.borrow(
+      asset.reserve,
+      tokenAccountKey,
+      amount
+    );
+    await new Promise((r) => setTimeout(r, 500));
+    const tx = await provider.connection.getTransaction(txId, {
+      commitment: "confirmed",
+    });
 
     const reserve = await loadReserve(asset.reserve.address);
 
@@ -374,8 +390,7 @@ describe("jet", async () => {
     const notesBalance = await checkBalance(notesKey);
 
     const expectedTokenBalance = bn(initialTokenAmount).add(amount.value);
-    expectedLoanNotesBalance =
-      bn(1e4)
+    expectedLoanNotesBalance = bn(1e4)
       .add(bn(reserveConfig.loanOriginationFee))
       .mul(amount.value)
       .div(bn(1e4));
@@ -385,7 +400,7 @@ describe("jet", async () => {
     assert.equal(
       reserve.state.outstandingDebt.div(bn(1e15)).toString(),
       expectedLoanNotesBalance.toString()
-    )
+    );
   });
 
   it("user B fails to borrow beyond limit", async () => {
@@ -467,13 +482,17 @@ describe("jet", async () => {
     const collateralBalance = await checkBalance(collateralKey);
     const vaultBalance = await checkBalance(vaultKey);
 
-    const expectedTokenBalance = initialTokenAmount - wsolDeposit + wsolWithdrawal;
+    const expectedTokenBalance =
+      initialTokenAmount - wsolDeposit + wsolWithdrawal;
     const expectedCollateralBalance = 0.95 * wsolDeposit;
     const expectedVaultBalance = expectedCollateralBalance;
 
     assert.equal(tokenBalance.toString(), bn(expectedTokenBalance).toString());
     assert.equal(notesBalance.toString(), "0");
-    assert.equal(collateralBalance.toString(), bn(expectedCollateralBalance).toString());
+    assert.equal(
+      collateralBalance.toString(),
+      bn(expectedCollateralBalance).toString()
+    );
     assert.equal(vaultBalance.toString(), bn(expectedVaultBalance).toString());
   });
 
@@ -485,7 +504,7 @@ describe("jet", async () => {
     const _debt0 = _reserve.state.outstandingDebt;
     const t0 = _reserve.state.accruedUntil;
 
-    await new Promise(r => setTimeout(r, 2000));
+    await new Promise((r) => setTimeout(r, 2000));
 
     await asset.reserve.refresh();
     _reserve = await loadReserve(asset.reserve.address);
@@ -493,9 +512,9 @@ describe("jet", async () => {
     const t1 = _reserve.state.accruedUntil;
 
     const interestAccrued = debt1.sub(_debt0).div(bn(1e15)).toNumber();
-    const t = t1.sub(t0).toNumber() / (365*24*60*60);
+    const t = t1.sub(t0).toNumber() / (365 * 24 * 60 * 60);
 
-    const debt0 = _debt0.div(bn(1e15)).toNumber()
+    const debt0 = _debt0.div(bn(1e15)).toNumber();
     const impliedRate = Math.log1p(interestAccrued / debt0) / t;
     const naccRate = reserveConfig.borrowRate0 * 1e-4;
 
@@ -520,9 +539,14 @@ describe("jet", async () => {
     const user = userB;
     const asset = usdc;
     const amount = Amount.loanNotes(usdcDeposit * 0.1);
-    const tokenAccountKey = user.tokenAccounts[asset.token.publicKey.toBase58()];
+    const tokenAccountKey =
+      user.tokenAccounts[asset.token.publicKey.toBase58()];
 
-    const txId = await user.client.repay(asset.reserve, tokenAccountKey, amount);
+    const txId = await user.client.repay(
+      asset.reserve,
+      tokenAccountKey,
+      amount
+    );
 
     const obligationKey = (
       await client.findDerivedAccount([
@@ -541,7 +565,7 @@ describe("jet", async () => {
     ).address;
 
     const notesBalance = await checkBalance(notesKey);
-    
+
     expectedLoanNotesBalance = expectedLoanNotesBalance.sub(amount.value);
 
     assert.equal(notesBalance.toString(), expectedLoanNotesBalance.toString());
@@ -587,14 +611,18 @@ describe("jet", async () => {
     const expectedCollateralBalance = bn(usdcDeposit * 0.8);
 
     assert.equal(notesBalance.toString(), "0");
-    assert.equal(collateralBalance.toString(), expectedCollateralBalance.toString());
+    assert.equal(
+      collateralBalance.toString(),
+      expectedCollateralBalance.toString()
+    );
   });
 
   it("user B repays all usdc debt", async () => {
     const user = userB;
     const asset = usdc;
     const amount = Amount.loanNotes(expectedLoanNotesBalance.toNumber()); // FIXME Can user B overpay?
-    const tokenAccountKey = user.tokenAccounts[asset.token.publicKey.toBase58()];
+    const tokenAccountKey =
+      user.tokenAccounts[asset.token.publicKey.toBase58()];
 
     const obligationKey = (
       await client.findDerivedAccount([
@@ -715,7 +743,9 @@ describe("jet", async () => {
     const finalBalanceB = await checkBalance(tokenKeyB);
     const vaultBalance = await checkBalance(vaultKey);
 
-    const baseFee = bn(usdcDeposit * reserveConfig.loanOriginationFee * 0.8 * 1e-4)
+    const baseFee = bn(
+      usdcDeposit * reserveConfig.loanOriginationFee * 0.8 * 1e-4
+    );
 
     assert.ok(finalBalanceA.gt(finalBalanceB));
     assert.ok(vaultBalance.gt(baseFee));
