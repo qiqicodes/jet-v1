@@ -211,7 +211,7 @@ impl Obligation {
         let collateral_max_notes = std::cmp::min(collateral_max_notes, collateral.amount);
 
         let collateral = self.collateral_mut().position_mut(collateral_account)?;
-        collateral.amount = collateral.amount.saturating_sub(repay_notes_amount);
+        collateral.amount = collateral.amount.saturating_sub(collateral_max_notes);
 
         Ok(collateral_max_notes)
     }
