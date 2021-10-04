@@ -390,6 +390,13 @@ export interface IdlMetadata {
   reserves: ReserveMetadata[]
 };
 
+//Idl errors
+export interface CustomProgramError {
+  code: number;
+  name: string;
+  msg: string;  
+};
+
 export interface MarketMetadata {
   market: PublicKey,
   marketAuthority: PublicKey,
