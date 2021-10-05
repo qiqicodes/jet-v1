@@ -1,0 +1,21 @@
+[package]
+name = "jet-cli"
+version = "0.2.0"
+edition = "2018"
+
+[dependencies]
+structopt = "0.3"
+bytemuck = "1.7"
+anyhow = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+jet = { path = "../../programs/jet" }
+jet-math = { path = "../../libraries/math" }
+pyth-client = "0.2"
+anchor-lang = { git = "https://github.com/jet-lab/anchor" }
+anchor-client = { git = "https://github.com/jet-lab/anchor" }
+anchor-spl = { git = "https://github.com/jet-lab/anchor" }
+solana-account-decoder = "1.7"
+solana-transaction-status = "1.7"
+toml = "0.5"
+shellexpand = "2.1"
