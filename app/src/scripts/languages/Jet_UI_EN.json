@@ -137,7 +137,7 @@
             "refresh": "Refresh",
             "originationFee": "There is a fee of {{ORIGINATION FEE}}% attached to this loan.",
             "headsup": "Heads up!",
-            "disclaimer": "",
+            "disclaimer": "This is experimental software.",
             "accept": "Accept"
         }
     },
