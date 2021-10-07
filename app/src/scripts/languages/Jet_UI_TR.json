@@ -137,7 +137,7 @@
             "refresh": "Yenile",
             "originationFee": "Bu borca ilişkin {{ORIGINATION FEE}}% kadar oluşturulma komisyonu bulunmaktadır. ",
             "headsup": "Dikkat buraya!",
-            "disclaimer": "",
+            "disclaimer": "This is experimental software.",
             "accept": "Accept"
         }
     },
