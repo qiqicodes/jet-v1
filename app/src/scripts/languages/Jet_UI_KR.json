@@ -138,7 +138,8 @@
             "originationFee": "이 대출에는 {{ORIGINATION FEE}}%의 수수료가 부과됩니다.",
             "headsup": "예의주시하세요!",
             "disclaimer": "This is experimental software.",
-            "accept": "Accept"
+            "accept": "Accept",
+            "warning": "Warning"
         }
     },
     "transactions": {
