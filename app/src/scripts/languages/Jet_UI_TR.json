@@ -137,7 +137,7 @@
             "refresh": "Yenile",
             "originationFee": "Bu borca ilişkin {{ORIGINATION FEE}}% kadar oluşturulma komisyonu bulunmaktadır. ",
             "headsup": "Dikkat buraya!",
-            "disclaimer": "This is experimental software.",
+            "disclaimer": "YOU ARE ACCESSING THE JET PROTOCOL MAINNET. DO NOT PROCEED IF YOU ARE UNFAMILIAR, OR DO NOT ACCEPT THE TERMS, OR THE POTENTIAL FOR TOTAL FINANCIAL LOSS. USE OF THE JET PROTOCOL MAY RESULT IN COMPLETE AND TOTAL FINANCIAL LOSSES.",
             "accept": "Accept",
             "warning": "Warning"
         }
