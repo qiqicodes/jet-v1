@@ -138,7 +138,8 @@
             "originationFee": "这笔贷款会收取 {{ORIGINATION FEE}}% 发起费用.",
             "headsup": "小心!",
             "disclaimer": "This is experimental software.",
-            "accept": "Accept"
+            "accept": "Accept",
+            "warning": "Warning"
         }
     },
     "transactions": {
