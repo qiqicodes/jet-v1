@@ -81,7 +81,7 @@
         "defaultNode": "Jet Default",
         "reset": "Перезагрузка",
         "noUrl": "Ввести URL",
-        "disconnect": "Disconnect Wallet",
+        "disconnect": "Отключить кошелёк",
         "connected": "Connected"
     },
     "reserveDetail": {
@@ -139,6 +139,7 @@
             "headsup": "Внимание!",
             "disclaimer": "This is experimental software.",
             "accept": "Accept"
+
         }
     },
     "transactions": {

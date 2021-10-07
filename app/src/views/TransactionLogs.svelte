@@ -7,7 +7,7 @@
   import { TRANSACTION_LOGS, PREFERRED_LANGUAGE, WALLET_INIT } from '../store';
   import { getTransactionLogs } from '../scripts/jet'; 
   import { totalAbbrev, shortenPubkey } from '../scripts/utils';
-  import { dictionary } from '../scripts/localization'; 
+  import { dictionary } from '../scripts/localization';  
   import ConnectWallet from '../components/ConnectWallet.svelte';
   import Loader from '../components/Loader.svelte';
 
@@ -103,7 +103,7 @@
                 {dictionary[$PREFERRED_LANGUAGE].transactions.noTrades} 
               </td>
             </tr>
-          {/if}
+            {/if}
         </tbody>
       </Datatable>
     </div>
