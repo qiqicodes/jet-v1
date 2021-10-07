@@ -137,9 +137,9 @@
             "refresh": "更新网页",
             "originationFee": "这笔贷款会收取 {{ORIGINATION FEE}}% 发起费用.",
             "headsup": "小心!",
-            "disclaimer": "YOU ARE ACCESSING THE JET PROTOCOL MAINNET. DO NOT PROCEED IF YOU ARE UNFAMILIAR, OR DO NOT ACCEPT THE TERMS, OR THE POTENTIAL FOR TOTAL FINANCIAL LOSS. USE OF THE JET PROTOCOL MAY RESULT IN COMPLETE AND TOTAL FINANCIAL LOSSES.",
+            "disclaimer": "You are accessing the Jet Protocol mainnet. Do not proceed if you are unfamiliar, or do not accept the terms, or the potential for total financial loss. Use of the Jet Protocol may result in complete and total financial losses.",
             "accept": "Accept",
-            "warning": "Warning"
+            "warning": "WARNING"
         }
     },
     "transactions": {
