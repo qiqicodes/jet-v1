@@ -550,7 +550,7 @@ export const withdraw = async (abbrev: string, amount: Amount)
 
   // Obligatory refresh instruction
   const refreshReserveIxs = buildRefreshReserveIxs();
-
+  
   const withdrawCollateralBumps = {
     collateralAccount: asset.collateralNoteBump,
     depositAccount: asset.depositNoteBump,
