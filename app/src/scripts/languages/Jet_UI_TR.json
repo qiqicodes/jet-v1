@@ -138,7 +138,8 @@
             "originationFee": "Bu borca ilişkin {{ORIGINATION FEE}}% kadar oluşturulma komisyonu bulunmaktadır. ",
             "headsup": "Dikkat buraya!",
             "disclaimer": "This is experimental software.",
-            "accept": "Accept"
+            "accept": "Accept",
+            "warning": "Warning"
         }
     },
     "transactions": {
