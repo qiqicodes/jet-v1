@@ -203,7 +203,7 @@ export const getTransactionLogs = async (): Promise<void> => {
   if (!wallet?.publicKey) {
     return;
   }
-  
+
   // Reset global store
   TRANSACTION_LOGS.set(null);
   // Establish solana connection and get all confirmed signatures
