@@ -137,7 +137,7 @@
             "refresh": "새로고침",
             "originationFee": "이 대출에는 {{ORIGINATION FEE}}%의 수수료가 부과됩니다.",
             "headsup": "예의주시하세요!",
-            "disclaimer": "",
+            "disclaimer": "This is experimental software.",
             "accept": "Accept"
         }
     },
