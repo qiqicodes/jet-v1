@@ -138,8 +138,8 @@
             "originationFee": "Этот займ выдается с комиссией {{ORIGINATION FEE}}%",
             "headsup": "Внимание!",
             "disclaimer": "This is experimental software.",
-            "accept": "Accept"
-
+            "accept": "Accept",
+            "warning": "Warning"
         }
     },
     "transactions": {
