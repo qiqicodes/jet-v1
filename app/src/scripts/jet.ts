@@ -211,7 +211,9 @@ export const getWalletAndAnchor = async (provider: WalletProvider): Promise<void
           alert: {
             good: false,
             header: dictionary[preferredLanguage].copilot.alert.warning,
-            text: dictionary[preferredLanguage].copilot.alert.disclaimer,
+            text: dictionary[preferredLanguage].copilot.alert.disclaimer
+              .replaceAll('{{TERMS OF USE}}', `<a href="https://www.jetprotocol.io/terms-of-use" target="_blank" class="bicyclette-bold text-gradient">TERMS OF USE</a>`)
+              .replaceAll('{{PRIVACY POLICY}}', `<a href="https://www.jetprotocol.io/privacy-policy" target="_blank" class="bicyclette-bold text-gradient">PRIVACY POLICY</a>`),
             action: {
               text: dictionary[preferredLanguage].copilot.alert.accept,
               onClick: () => localStorage.setItem('jetDisclaimer', 'true')
