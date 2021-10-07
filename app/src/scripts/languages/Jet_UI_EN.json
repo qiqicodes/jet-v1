@@ -13,7 +13,6 @@
         "settings": "Settings",
         "collapse": "Collapse",
         "getCopilotSuggestion": "Get Copilot Suggestion",
-        "disconnectWallet": "Disconnect Wallet",
         "transactions": "Flight Logs"
     },
     "cockpit": {
@@ -89,7 +88,9 @@
         "current": "Current",
         "defaultNode": "Jet Default",
         "reset": "Reset",
-        "noUrl": "Enter a URL"
+        "noUrl": "Enter a URL",
+        "disconnect": "Disconnect Wallet",
+        "connected": "Connected"
     },
     "reserveDetail": {
         "reserveSize": "Reserve Size",
@@ -143,7 +144,9 @@
             "airdropSuccess": "We have Airdropped you {{UI AMOUNT}} {{RESERVE ABBREV}}. Please refresh the app to see your new balance.",
             "refresh": "Refresh",
             "originationFee": "There is a fee of {{ORIGINATION FEE}}% attached to this loan.",
-            "headsup": "Heads up!"
+            "headsup": "Heads up!",
+            "disclaimer": "This is experimental software.",
+            "accept": "Accept"
         }
     },
     "transactions": {
@@ -152,6 +155,11 @@
         "signature": "Signature",
         "tradeAction": "Transaction",
         "tradeAmount": "Amount",
-        "noTrades": "You have no logged transactions with Jet."
+        "noTrades": "You have no logged transactions with Jet.",
+        "entries": "{start} to {end} of {rows}",
+        "deposit": "Deposit",
+        "withdraw": "Withdraw",
+        "borrow": "Borrow",
+        "repay": "Repay"
     }
 }
