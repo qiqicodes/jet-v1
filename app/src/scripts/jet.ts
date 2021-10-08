@@ -264,10 +264,42 @@ export let getLogDetails = async (log: TransactionLog, signature: string): Promi
           for (let i = 0; i < 8; i++) {
             txInstBytes.push(inst.data[i]);
           }
-          // If those bytes match any of our instructions label trade action
-          if (JSON.stringify(INSTRUCTION_BYTES[progInst]) === JSON.stringify(txInstBytes)) {
+         
+          const preTokenBalances = log.meta.preTokenBalances as any;
+          const withdrawOrBorrowSol = (JSON.stringify(txInstBytes) === JSON.stringify(INSTRUCTION_BYTES.withdraw) && preTokenBalances.mint !== 'So11111111111111111111111111111111111111112') || JSON.stringify(txInstBytes) === JSON.stringify(INSTRUCTION_BYTES.borrow) && preTokenBalances.mint !== 'So11111111111111111111111111111111111111112';
+           // If those bytes match any of our instructions label trade action
+          const matchedInstructionBytes = JSON.stringify(INSTRUCTION_BYTES[progInst]) === JSON.stringify(txInstBytes);
+          if (matchedInstructionBytes && withdrawOrBorrowSol) {
             log.tradeAction = dictionary[preferredLanguage].transactions[progInst];
-            // Determine asset and trade amount
+            for (let pre of log.meta.preTokenBalances as any[]) {
+              for (let post of log.meta.postTokenBalances as any[]) {
+                if (pre.mint === post.mint && pre.uiTokenAmount.amount !== post.uiTokenAmount.amount && pre.uiTokenAmount.amount !== '0') {
+                  for (let reserve of idl.metadata.reserves) {
+                    if (reserve.accounts.tokenMint === pre.mint) {
+                      log.tokenAbbrev = reserve.abbrev;
+                      log.tokenDecimals = reserve.decimals;
+                      log.tokenPrice = reserve.price;
+                      log.tradeAmount = new TokenAmount(
+                        new BN(post.uiTokenAmount.amount - pre.uiTokenAmount.amount),
+                        reserve.decimals
+                      );
+                    }
+                  }
+                }
+              }
+            }
+            // Signature
+            log.signature = signature;
+            // UI date
+            log.blockDate = new Date(log.blockTime * 1000).toLocaleDateString();
+            // Explorer URL
+            log.explorerUrl = explorerUrl(log.signature);
+            // If we found mint match, add tx to logs
+            if (log.tokenAbbrev) {
+              return log;
+            }
+          } else if (matchedInstructionBytes) {
+            log.tradeAction = dictionary[preferredLanguage].transactions[progInst];
             for (let pre of log.meta.preTokenBalances as any[]) {
               for (let post of log.meta.postTokenBalances as any[]) {
                 if (pre.mint === post.mint && pre.uiTokenAmount.amount !== post.uiTokenAmount.amount) {
