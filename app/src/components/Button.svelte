@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { PREFERRED_LANGUAGE } from "../store";
+  import { PREFERRED_LANGUAGE, WALLET_INIT } from "../store";
   import { dictionary } from "../scripts/localization";
 
   export let text: string;
@@ -75,7 +75,7 @@
 
   @media screen and (max-width: 1100px) {
     button {
-      font-size: 12px;
+      font-size: 10px;
     }
   }
 </style>
