@@ -12,11 +12,13 @@
       }
     });
   });
+
+  const acceptJetDisclaimer = localStorage.getItem('jetDisclaimer');
 </script>
 
 {#if $COPILOT}
   <div class="modal-bg flex align-center justify-center"
-    on:click={() => COPILOT.set(null)}
+    on:click={() => acceptJetDisclaimer ? COPILOT.set(null) : null}
     transition:fade={{duration: 50}}>
   </div>
   <div class="copilot modal flex align-center justify-center column"
@@ -112,9 +114,12 @@
           {/if}
         </div>
       {/if}
+      <!-- Prevents user from clicking away to avoid disclaimer -->
+      {#if acceptJetDisclaimer}
       <i on:click={() => COPILOT.set(null)} class="jet-icons close">
         ✕
       </i>
+      {/if}
     </div>
   </div>
 {/if}
