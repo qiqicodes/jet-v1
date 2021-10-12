@@ -1,9 +1,9 @@
 <svelte:head>
-  <title>Jet Protocol | {dictionary[$PREFERRED_LANGUAGE].transactions.title}</title>
+  <title>Jet Protocol | {dictionary[$USER.preferredLanguage].transactions.title}</title>
 </svelte:head>
 <script lang="ts">
   import { Datatable, rows } from 'svelte-simple-datatables';
-  import { TRANSACTION_LOGS, PREFERRED_LANGUAGE } from '../store';
+  import { USER } from '../store';
   import { getTransactionLogs } from '../scripts/jet'; 
   import { totalAbbrev, shortenPubkey } from '../scripts/util';
   import { dictionary } from '../scripts/localization';  
@@ -19,8 +19,8 @@
       searchInput: false
     },
     labels: {
-      noRows: dictionary[$PREFERRED_LANGUAGE].transactions.noTrades,
-      info: dictionary[$PREFERRED_LANGUAGE].transactions.entries,
+      noRows: dictionary[$USER.preferredLanguage].transactions.noTrades,
+      info: dictionary[$USER.preferredLanguage].transactions.entries,
       previous: '<',
       next: '>'
     }
@@ -29,26 +29,26 @@
 
 <div class="view-container flex justify-center column">
   <h1 class="view-title text-gradient">
-    {dictionary[$PREFERRED_LANGUAGE].transactions.title}
+    {dictionary[$USER.preferredLanguage].transactions.title}
   </h1>
   <div class="divider">
   </div>
-  {#if $TRANSACTION_LOGS}
+  {#if $USER.transactionLogs}
     <div class="transaction-logs flex">
-      <Datatable settings={tableSettings} data={$TRANSACTION_LOGS}>
+      <Datatable settings={tableSettings} data={$USER.transactionLogs}>
         <thead>
           <th data-key="blockDate">
-            {dictionary[$PREFERRED_LANGUAGE].transactions.date} 
+            {dictionary[$USER.preferredLanguage].transactions.date} 
           </th>
           <th data-key="signature">
-            {dictionary[$PREFERRED_LANGUAGE].transactions.signature} 
+            {dictionary[$USER.preferredLanguage].transactions.signature} 
           </th>
           <th data-key="tradeAction"
             style="text-align: center !important;">
-            {dictionary[$PREFERRED_LANGUAGE].transactions.tradeAction} 
+            {dictionary[$USER.preferredLanguage].transactions.tradeAction} 
           </th>
           <th data-key="tradeAmount" class="asset">
-            {dictionary[$PREFERRED_LANGUAGE].transactions.tradeAmount} 
+            {dictionary[$USER.preferredLanguage].transactions.tradeAmount} 
           </th>
           <th>
           <i class="refresh-logs fas fa-sync"

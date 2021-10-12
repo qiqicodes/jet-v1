@@ -1,5 +1,5 @@
 import type { Locale } from '../models/JetTypes';
-import { INIT_FAILED, LOCALE, PREFERRED_LANGUAGE } from '../store';
+import { USER } from '../store';
 import * as Jet_UI_EN from './languages/Jet_UI_EN.json';
 import * as Jet_Definitions_EN from './languages/Jet_Definitions_EN.json';
 import * as Jet_UI_ZH from './languages/Jet_UI_ZH.json';
@@ -47,17 +47,26 @@ export const getLocale = async (): Promise<void> => {
         // of the postal code further match Crimean postal codes.
         if (locale?.country === "UA") {
           if(isCrimea(locale)) {
-            INIT_FAILED.set({ geobanned: true })
+            USER.update(user => {
+              user.isGeobanned = true;
+              return user;
+            });
           }
         } else {
-          INIT_FAILED.set({ geobanned: true });
+          USER.update(user => {
+            user.isGeobanned = true;
+            return user;
+          });
         }
       }
     });
 
-    // Set language and locale
-    PREFERRED_LANGUAGE.set(language);
-    LOCALE.set(locale ?? null);
+    // Set language and user locale
+    USER.update(user => {
+      user.location = locale ?? null;
+      user.preferredLanguage = language;
+      return user;
+    });
   } catch (err) {
     console.log(err);
   }

@@ -1,7 +1,4 @@
 <script lang="ts">
-  import { PREFERRED_LANGUAGE, WALLET_INIT } from "../store";
-  import { dictionary } from "../scripts/localization";
-
   export let text: string;
   export let img: string = '';
   export let disabled: boolean = false;
@@ -18,7 +15,7 @@
   title={text}
   on:click={() => {if(!disabled) onClick()}}>
   {#if img}
-    <img src={img} alt={dictionary[$PREFERRED_LANGUAGE].settings.wallet} />
+    <img src={img} alt={text} />
   {/if}
   {text}
 </button>

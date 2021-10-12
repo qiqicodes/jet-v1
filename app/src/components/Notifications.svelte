@@ -1,13 +1,13 @@
 <script lang="ts">
   import { fade, fly } from 'svelte/transition';
   import { navigate } from 'svelte-navigator';
-  import { NOTIFICATIONS } from '../store';
+  import { USER } from '../store';
   import { clearNotification } from '../scripts/util';
 </script>
 
-{#if $NOTIFICATIONS.length}
+{#if $USER.notifications?.length}
   <div class="notifications flex align-center justify-center column">
-    {#each $NOTIFICATIONS as n, i}
+    {#each $USER.notifications as n, i}
       <div class="notification flex align-center justify-center"
         class:success={n.success}
         in:fly={{y: 50, duration: 500}}
@@ -70,9 +70,10 @@
   }
   p {
     font-size: 14px;
-    max-width: 270px;
+    max-width: 215px;
     padding: var(--spacing-sm);
     color: var(--white);
+    border-right: 1px solid var(--white);
     opacity: 1;
   }
   img {

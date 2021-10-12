@@ -1,10 +1,10 @@
 <script lang="ts">
   import { fade, fly } from 'svelte/transition';
   import type { WalletProvider } from '../models/JetTypes';
-  import { CONNECT_WALLET, ASSETS, PREFERRED_LANGUAGE } from '../store';
+  import { USER } from '../store';
   import { getWalletAndAnchor } from '../scripts/jet';
   import { dictionary } from '../scripts/localization';
-  import Logo from '../components/Logo.svelte';
+  import Logo from './Logo.svelte';
 
   let walletChoice: string;
   const providers: WalletProvider[] = [
@@ -31,17 +31,20 @@
   ];
 </script>
 
-{#if $CONNECT_WALLET && !$ASSETS}
+{#if $USER.connectingWallet && !$USER.wallet}
   <div class="modal-bg"
     transition:fade={{duration: 50}}
-    on:click={() => CONNECT_WALLET.set(false)}>
+    on:click={() => USER.update(user => {
+      user.connectingWallet = false;
+      return user;
+    })}>
   </div>
   <div class="modal flex align-center justify-center column"
     in:fly={{y: 50, duration: 500}}
     out:fade={{duration: 50}}>
     <Logo width={120} />
     <span>
-      {dictionary[$PREFERRED_LANGUAGE].settings.worldOfDefi}
+      {dictionary[$USER.preferredLanguage].settings.worldOfDefi}
     </span>
     <div class="divider">
     </div>
@@ -66,7 +69,10 @@
       {/each} 
     </div>
     <i class="jet-icons close"
-      on:click={() => CONNECT_WALLET.set(false)}>
+      on:click={() => USER.update(user => {
+        user.connectingWallet = false;
+        return user;
+      })}>
       ✕
     </i>
   </div>

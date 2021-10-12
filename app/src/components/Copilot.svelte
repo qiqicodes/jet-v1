@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { fade, fly } from 'svelte/transition';
-  import { COPILOT, PREFERRED_LANGUAGE } from '../store';
+  import { COPILOT, USER } from '../store';
   import { dictionary } from '../scripts/localization';
   import Button from '../components/Button.svelte';
 
@@ -38,7 +38,7 @@
     <div class="copilot-body modal-section flex align-start justify-center column">
       {#if $COPILOT.suggestion}
         <h1 class="bicyclette modal-section text-gradient">
-          {dictionary[$PREFERRED_LANGUAGE].copilot.header}
+          {dictionary[$USER.preferredLanguage].copilot.header}
         </h1>
         {#if $COPILOT.suggestion.overview}
           <h2 class="bicyclette modal-section" 
@@ -58,7 +58,7 @@
         {/if}
         <div class="button flex align-center justify-center">
           {#if $COPILOT.suggestion.action}
-            <Button text={$COPILOT.suggestion.action.text ?? dictionary[$PREFERRED_LANGUAGE].copilot.okay} 
+            <Button text={$COPILOT.suggestion.action.text ?? dictionary[$USER.preferredLanguage].copilot.okay} 
               onClick={() => {
                 $COPILOT?.suggestion?.action?.onClick();
                 COPILOT.set(null);
@@ -67,7 +67,7 @@
               small
             />
           {:else}
-            <Button text={dictionary[$PREFERRED_LANGUAGE].copilot.okay} 
+            <Button text={dictionary[$USER.preferredLanguage].copilot.okay} 
               onClick={() => COPILOT.set(null)}
               error={!$COPILOT.suggestion?.good}
               small
@@ -82,7 +82,7 @@
           {@html $COPILOT.definition.definition}
         </span>
         <div class="button flex align-center justify-center">
-          <Button text={dictionary[$PREFERRED_LANGUAGE].copilot.okay} 
+          <Button text={dictionary[$USER.preferredLanguage].copilot.okay} 
             onClick={() => COPILOT.set(null)}
             small
           />
@@ -106,7 +106,7 @@
               small
             />
           {:else}
-            <Button text={dictionary[$PREFERRED_LANGUAGE].copilot.okay} 
+            <Button text={dictionary[$USER.preferredLanguage].copilot.okay} 
               onClick={() => COPILOT.set(null)}
               error={!$COPILOT.alert?.good}
               small

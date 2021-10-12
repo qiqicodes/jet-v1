@@ -1,16 +1,12 @@
 import { BN } from '@project-serum/anchor';
 import type { AccountInfo as TokenAccountInfo, MintInfo, u64 } from '@solana/spl-token';
-import type { Market, AssetStore, Obligation, Notification } from '../models/JetTypes';
-import { MARKET, ASSETS, DARK_THEME, WALLET, WALLET_INIT, NOTIFICATIONS, TRANSACTION_LOGS, CONNECT_WALLET } from '../store';
+import type { Market, User, Obligation, Notification } from '../models/JetTypes';
+import { MARKET, USER } from '../store';
 
-let wallet: any;
 let market: Market | null;
-let assets: AssetStore | null;
-let notifications: Notification[];
-WALLET.subscribe(data => wallet = data);
+let user: User;
 MARKET.subscribe(data => market = data);
-ASSETS.subscribe(data => assets = data);
-NOTIFICATIONS.subscribe(data => notifications = data);
+USER.subscribe(data => user = data);
 
 const NOTIFICATION_TIMEOUT = 4000;
 
@@ -49,22 +45,27 @@ export const setDark = (darkTheme: boolean): void => {
   }
 
   localStorage.setItem('jetDark', JSON.stringify(darkTheme));
-  DARK_THEME.set(darkTheme);
+  USER.update(user => {
+    user.darkTheme = darkTheme;
+    return user;
+  });
 };
 
 // Disconnect user wallet
 export const disconnectWallet = () => {
-  if (wallet.disconnect) {
-    wallet.disconnect();
+  if (user.wallet?.disconnect) {
+    user.wallet.disconnect();
   }
-  if (wallet.forgetAccounts) {
-    wallet.forgetAccounts();
+  if (user.wallet?.forgetAccounts) {
+    user.wallet.forgetAccounts();
   }
 
-  WALLET.set(null);
-  ASSETS.set(null);
-  WALLET_INIT.set(false);
-  TRANSACTION_LOGS.set([]);
+  USER.update(user => {
+    user.wallet = null;
+    user.assets = null;
+    user.transactionLogs = [];
+    return user;
+  })
 };
 
 // Format USD or crypto with default or desired decimals
@@ -118,20 +119,26 @@ export const timeout = (ms: number): Promise<boolean> => {
 
 // Notification store
 export const addNotification = (notification: Notification) => {
-  const notifs = notifications;
+  const notifs = user.notifications ?? [];
   notifs.push(notification);
   const index = notifs.indexOf(notification);
-  NOTIFICATIONS.set(notifs);
+  USER.update(user => {
+    user.notifications = notifs;
+    return user;
+  })
   setTimeout(() => {
-    if (notifications[index] && notifications[index].text === notification.text) {
+    if (user.notifications[index] && user.notifications[index].text === notification.text) {
       clearNotification(index);
     }
   }, NOTIFICATION_TIMEOUT);
 };
 export const clearNotification = (index: number): void => {
-  const notifs = notifications;
+  const notifs = user.notifications;
   notifs.splice(index, 1);
-  NOTIFICATIONS.set(notifs);
+  USER.update(user => {
+    user.notifications = notifs;
+    return user;
+  })
 };
 
 // Calculate total value of deposits and borrowings, as well as c-ratio
@@ -141,7 +148,7 @@ export const getObligationData = (): Obligation => {
   let colRatio = 0;
   let utilizationRate = 0;
 
-  if (!assets || !market) {
+  if (!user.assets || !market) {
     return {
       depositedValue,
       borrowedValue,
@@ -150,13 +157,13 @@ export const getObligationData = (): Obligation => {
     }
   }
 
-  for (let t in assets.tokens) {
+  for (let t in user.assets.tokens) {
     depositedValue += new TokenAmount(
-      assets.tokens[t].collateralBalance.amount,
+      user.assets.tokens[t].collateralBalance.amount,
       market.reserves[t].decimals
     ).uiAmountFloat * market.reserves[t].price;
     borrowedValue += new TokenAmount(
-      assets.tokens[t].loanBalance.amount,
+      user.assets.tokens[t].loanBalance.amount,
       market.reserves[t].decimals
     ).uiAmountFloat * market.reserves[t].price;
 

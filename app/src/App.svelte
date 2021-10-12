@@ -9,7 +9,7 @@
   import TransactionLogs from "./views/TransactionLogs.svelte";
   import Settings from './views/Settings.svelte';
   import Loader from './components/Loader.svelte';
-  import ConnectWallet from './components/ConnectWallet.svelte';
+  import ConnectWalletModal from './components/ConnectWalletModal.svelte';
   import Copilot from './components/Copilot.svelte';
   import Notifications from './components/Notifications.svelte';
 
@@ -44,7 +44,7 @@
   {:else}
     <Loader fullscreen />
   {/if}
-  <ConnectWallet />
+  <ConnectWalletModal />
   <Copilot />
   <Notifications />
 </Router>
