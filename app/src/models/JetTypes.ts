@@ -39,12 +39,14 @@ export interface CustomProgramError {
 
 // Market
 export interface Market {
+  totalValueLocked: () => number,
   minColRatio: number,
   reserves: Record<string, Reserve>,
   accountPubkey: PublicKey,
   account?: AccountInfo<MarketAccount>,
   authorityPubkey: PublicKey,
-  totalValueLocked: () => number
+  currentReserve: Reserve | null,
+  nativeValues: boolean
 };
 export interface MarketAccount {
   version: number,
@@ -253,15 +255,21 @@ export interface User {
   walletInit: boolean,
   assets: AssetStore | null,
   obligation: Obligation | null,
+  belowMinCRatio: boolean,
   warnedOfLiquidation: boolean,
+  noDeposits: boolean,
+  tradeAction: string,
+  walletBalance: (r?: Reserve) => TokenAmount,
+  collateralBalance: (r?: Reserve) => TokenAmount,
+  loanBalance: (r?: Reserve) => TokenAmount,
+  maxWithdraw: () => number,
+  maxBorrow: () => number,
+  maxInput: () => number,
+  assetIsCurrentDeposit: () => boolean,
+  assetIsCurrentBorrow: () => boolean,
 
   // Transaction logs
   transactionLogs: TransactionLog[] | null,
-
-  // Current actions
-  currentReserve: Reserve | null,
-  tradeAction: string,
-  nativeValues: boolean,
 
   // Preferences
   darkTheme: boolean,

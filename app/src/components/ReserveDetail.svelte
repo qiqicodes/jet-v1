@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { fade, fly } from 'svelte/transition';
   import type { Reserve } from '../models/JetTypes';
-  import { USER, COPILOT } from '../store';
+  import { MARKET, USER, COPILOT } from '../store';
   import { currencyFormatter, } from '../scripts/util';
   import { dictionary, definitions } from '../scripts/localization';
   import Button from './Button.svelte';
@@ -10,7 +10,6 @@
   import Toggle from './Toggle.svelte';
 
   export let reserveDetail: Reserve;
-  export let updateValues: Function;
   export let closeModal: Function;
 
   onMount(() => {
@@ -47,11 +46,11 @@
       <div class="divider">
       </div>
       <div class="toggler">
-        <Toggle onClick={() => USER.update(user => {
-          user.nativeValues = !$USER.nativeValues;
-          return user;
+        <Toggle onClick={() => MARKET.update(market => {
+          market.nativeValues = !$MARKET.nativeValues;
+          return market;
         })}
-          active={!$USER.nativeValues} 
+          active={!$MARKET.nativeValues} 
           native 
         />
       </div>
@@ -62,10 +61,10 @@
       </span>
       <h2 class="modal-subheader text-gradient">
         {currencyFormatter(
-          $USER.nativeValues
+          $MARKET.nativeValues
             ? reserveDetail.marketSize.uiAmountFloat
               : reserveDetail.marketSize.muln(reserveDetail.price).uiAmountFloat, 
-          !$USER.nativeValues, 
+          !$MARKET.nativeValues, 
           2
         )}
       </h2>
@@ -87,13 +86,13 @@
             <br>
             <p>
               {currencyFormatter(
-                $USER.nativeValues
+                $MARKET.nativeValues
                   ? reserveDetail.outstandingDebt.uiAmountFloat
                     : reserveDetail.outstandingDebt.muln(reserveDetail.price).uiAmountFloat, 
-                !$USER.nativeValues, 
+                !$MARKET.nativeValues, 
                 2
               )}
-              {#if $USER.nativeValues}
+              {#if $MARKET.nativeValues}
                 {reserveDetail.abbrev}
               {/if}
             </p>
@@ -108,13 +107,13 @@
             <br>
             <p>
               {currencyFormatter(
-                $USER.nativeValues
+                $MARKET.nativeValues
                   ? reserveDetail.availableLiquidity.uiAmountFloat
                     : reserveDetail.availableLiquidity.muln(reserveDetail.price).uiAmountFloat, 
-                !$USER.nativeValues, 
+                !$MARKET.nativeValues, 
                 2
               )}
-              {#if $USER.nativeValues}
+              {#if $MARKET.nativeValues}
                 {reserveDetail.abbrev}
               {/if}
             </p>
@@ -160,10 +159,9 @@
           onClick={() => {
             closeModal();
             USER.update(user => {
-              user.currentReserve = reserveDetail;
+              $MARKET.currentReserve = reserveDetail;
               return user;
             });
-            updateValues();
           }} 
         />
       {:else}
