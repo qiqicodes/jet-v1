@@ -234,13 +234,7 @@ impl Reserve {
     }
 
     /// Record an amount of tokens to be borrowed from the reserve.
-    pub fn borrow(
-        &mut self,
-        current_slot: u64,
-        token_amount: u64,
-        note_amount: u64,
-        fees: u64,
-    ) {
+    pub fn borrow(&mut self, current_slot: u64, token_amount: u64, note_amount: u64, fees: u64) {
         let borrowed_amount = Number::from(token_amount);
 
         let state = self.unwrap_state_mut(current_slot);

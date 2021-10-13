@@ -119,7 +119,8 @@ pub fn handler(ctx: Context<Borrow>, _bump: u8, amount: Amount) -> ProgramResult
 
     let requested_tokens = amount.as_tokens(reserve_info, Rounding::Down);
     let fees = reserve.borrow_fee(requested_tokens);
-    let total_token_debt = requested_tokens.checked_add(fees)
+    let total_token_debt = requested_tokens
+        .checked_add(fees)
         .expect("Requested a debt that would exceed the maximum potential supply for a token.");
 
     // Calculate the number of notes to create to match the value being
@@ -157,7 +158,7 @@ pub fn handler(ctx: Context<Borrow>, _bump: u8, amount: Amount) -> ProgramResult
         ctx.accounts
             .transfer_context()
             .with_signer(&[&market.authority_seeds()]),
-            requested_tokens,
+        requested_tokens,
     )?;
 
     emit!(BorrowEvent {
