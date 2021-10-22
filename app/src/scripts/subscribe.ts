@@ -55,7 +55,6 @@ export const subscribeToMarket = async (idlMeta: IdlMetadata, connection: anchor
   });
   promises.push(promise);
 
-
   for (const reserveMeta of idlMeta.reserves) {
     // Reserve
     promise = getAccountInfoAndSubscribe(connection, reserveMeta.accounts.reserve, account => {
@@ -336,9 +335,6 @@ const deriveValues = (reserve: Reserve, asset?: Asset) => {
     // Max borrow
     asset.maxBorrowAmount = ((user.position.depositedValue / market.minColRatio) - user.position.borrowedValue) / reserve.price;
     if (asset.maxBorrowAmount > reserve.availableLiquidity.uiAmountFloat) {
-      asset.maxBorrowAmount = reserve.availableLiquidity.uiAmountFloat;
-    }
-    if (reserve.availableLiquidity.uiAmountFloat < asset.maxBorrowAmount) {
       asset.maxBorrowAmount = reserve.availableLiquidity.uiAmountFloat;
     }
 
