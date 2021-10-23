@@ -5,7 +5,8 @@ import { ASSOCIATED_TOKEN_PROGRAM_ID, NATIVE_MINT } from "@solana/spl-token";
 import { AccountLayout as TokenAccountLayout, Token, TOKEN_PROGRAM_ID, u64 } from "@solana/spl-token";
 import Rollbar from 'rollbar';
 import WalletAdapter from './walletAdapter';
-import type { Market, User, Asset, Reserve, AssetStore, SolWindow, WalletProvider, Wallet, MathWallet, SolongWallet, CustomProgramError, TransactionLog } from '../models/JetTypes';
+import type { Market, User, Asset, Reserve, AssetStore, SolWindow, WalletProvider, SlopeWallet, Wallet, MathWallet, SolongWallet, CustomProgramError, TransactionLog } from '../models/JetTypes';
+import { TxnResponse } from "../models/JetTypes";
 import { MARKET, USER, COPILOT, PROGRAM, CUSTOM_PROGRAM_ERRORS, ANCHOR_WEB3_CONNECTION, ANCHOR_CODER, IDL_METADATA, INIT_FAILED } from '../store';
 import { subscribeToMarket, subscribeToAssets } from './subscribe';
 import { findDepositNoteAddress, findDepositNoteDestAddress, findLoanNoteAddress, findObligationAddress, sendTransaction, transactionErrorToString, findCollateralAddress, SOL_DECIMALS, parseIdlMetadata, sendAllTransactions, InstructionAndSigner, explorerUrl } from './programUtil';
@@ -169,13 +170,21 @@ export const getMarketAndIDL = async (): Promise<void> => {
 export const getWalletAndAnchor = async (provider: WalletProvider): Promise<void> => {
   // Cast solana injected window type
   const solWindow = window as unknown as SolWindow;
-  let wallet: Wallet | SolongWallet | MathWallet;
+  let wallet: Wallet | SolongWallet | MathWallet | SlopeWallet;
 
   // Wallet adapter or injected wallet setup
   if (provider.name === 'Phantom' && solWindow.solana?.isPhantom) {
     wallet = solWindow.solana as unknown as Wallet;
   } else if (provider.name === 'Solflare' && solWindow.solflare?.isSolflare) {
     wallet = solWindow.solflare as unknown as Wallet;
+  } else if(provider.name === 'Slope' && !!solWindow.Slope) {
+    wallet = new solWindow.Slope() as unknown as SlopeWallet;
+    const { data } = await wallet.connect();
+    if(data.publicKey) {
+      wallet.publicKey = new anchor.web3.PublicKey(data.publicKey);
+    }
+    wallet.on = (action: string, callback: any) => {if (callback) callback()};
+  
   } else if (provider.name === 'Math Wallet' && solWindow.solana?.isMathWallet) {
     wallet = solWindow.solana as unknown as MathWallet;
     wallet.publicKey = new anchor.web3.PublicKey(await solWindow.solana.getAccount());
@@ -220,7 +229,11 @@ export const getWalletAndAnchor = async (provider: WalletProvider): Promise<void
     })
   });
   // Initiate wallet connection
-  await wallet.connect();
+  try {
+    await wallet.connect();
+  } catch (err) {
+    console.error(err)
+  }
 
   // User must accept disclaimer upon mainnet launch
   if (!inDevelopment) {
@@ -480,14 +493,13 @@ export let addTransactionLog = async (signature: string) => {
 
 // Deposit
 export const deposit = async (abbrev: string, lamports: BN)
-  : Promise<[ok: boolean, txid: string | undefined]> => {
+  : Promise<[ok: TxnResponse, txid: string | null]> => {
   if (!user.assets || !user.wallet || !program) {
-    return [false, undefined];
+    return [TxnResponse.Failed, null];
   }
-
   const [ok, txid] = await refreshOldReserves();
   if (!ok) {
-    return [false, txid]
+    return [TxnResponse.Failed, txid]
   }
 
   let reserve = market.reserves[abbrev];
@@ -642,20 +654,20 @@ export const deposit = async (abbrev: string, lamports: BN)
   } catch (err) {
     console.error(`Deposit error: ${transactionErrorToString(err)}`);
     rollbar.error(`Deposit error: ${transactionErrorToString(err)}`);
-    return [false, undefined];
+    return [TxnResponse.Failed, null];
   }
 };
 
 // Withdraw
 export const withdraw = async (abbrev: string, amount: Amount)
-  : Promise<[ok: boolean, txid: string | undefined]> => {
+  : Promise<[ok: TxnResponse, txid: string | null]> => {
   if (!user.assets || !user.wallet || !program) {
-    return [false, undefined];
+    return [TxnResponse.Failed, null];
   }
 
   const [ok, txid] = await refreshOldReserves();
   if (!ok) {
-    return [false, txid]
+    return [TxnResponse.Failed, txid]
   }
 
   const reserve = market.reserves[abbrev];
@@ -779,20 +791,20 @@ export const withdraw = async (abbrev: string, amount: Amount)
   } catch (err) {
     console.error(`Withdraw error: ${transactionErrorToString(err)}`);
     rollbar.error(`Withdraw error: ${transactionErrorToString(err)}`);
-    return [false, undefined];
+    return [TxnResponse.Failed, null];
   }
 };
 
 // Borrow
 export const borrow = async (abbrev: string, amount: Amount)
-  : Promise<[ok: boolean, txid: string | undefined]> => {
+  : Promise<[ok: TxnResponse, txid: string | null]> => {
   if (!user.assets || !user.wallet || !program) {
-    return [false, undefined];
+    return [TxnResponse.Failed, null];
   }
 
   const [ok, txid] = await refreshOldReserves();
   if (!ok) {
-    return [false, txid]
+    return [TxnResponse.Failed, txid]
   }
   
 
@@ -923,20 +935,20 @@ export const borrow = async (abbrev: string, amount: Amount)
   } catch (err) {
     console.error(`Borrow error: ${transactionErrorToString(err)}`);
     rollbar.error(`Borrow error: ${transactionErrorToString(err)}`);
-    return [false, undefined];
+    return [TxnResponse.Failed, null];
   }
 };
 
 // Repay
 export const repay = async (abbrev: string, amount: Amount)
-  : Promise<[ok: boolean, txid: string | undefined]> => {
+  : Promise<[ok: TxnResponse, txid: string | null]> => {
   if (!user.assets || !user.wallet || !program) {
-    return [false, undefined];
+    return [TxnResponse.Failed, null];
   }
 
   const [ok, txid] = await refreshOldReserves();
   if (!ok) {
-    return [false, txid]
+    return [TxnResponse.Failed, txid]
   }
 
   const reserve = market.reserves[abbrev];
@@ -988,7 +1000,7 @@ export const repay = async (abbrev: string, amount: Amount)
       user.wallet.publicKey,
       []);
   } else if (!asset.walletTokenExists) {
-    return [false, undefined];
+    return [TxnResponse.Failed, null];
   }
 
   // Obligatory refresh instruction
@@ -1026,7 +1038,7 @@ export const repay = async (abbrev: string, amount: Amount)
   } catch (err) {
     console.error(`Repay error: ${transactionErrorToString(err)}`);
     rollbar.error(`Repay error: ${transactionErrorToString(err)}`);
-    return [false, undefined];
+    return [TxnResponse.Failed, null];
   }
 };
 
@@ -1068,12 +1080,12 @@ const buildRefreshReserveIxs = () => {
 /**Sends transactions to refresh all reserves
  * until it can be fully refreshed once more. */
 const refreshOldReserves = async ()
-  : Promise<[ok: boolean, txid: string | undefined]> => {
+  : Promise<[ok: TxnResponse, txid: string | null]> => {
   if (!program) {
-    return [false, undefined];
+    return [TxnResponse.Failed, null];
   }
 
-  let result: [ok: boolean, txid: string | undefined] = [true, undefined];
+  let result: [ok: TxnResponse, txid: string | null] = [TxnResponse.Success, null];
 
   for (const abbrev in market.reserves) {
     let reserve = market.reserves[abbrev];
@@ -1090,7 +1102,7 @@ const refreshOldReserves = async ()
         result = await sendTransaction(program.provider, ix);
       } catch (err) {
         console.log(transactionErrorToString(err));
-        return [false, undefined];
+        return [TxnResponse.Failed, null];
       }
       accruedUntil = accruedUntil.add(MAX_ACCRUAL_SECONDS);
     }
@@ -1124,16 +1136,16 @@ const buildRefreshReserveIx = (abbrev: string) => {
 
 // Faucet
 export const airdrop = async (abbrev: string, lamports: BN)
-  : Promise<[ok: boolean, txid: string | undefined]> => {
+  : Promise<[ok: TxnResponse, txid: string | null]> => {
   if (program == null || user.assets == null || !user.wallet) {
-    return [false, undefined];
+    return [TxnResponse.Failed, null];
   }
 
   let reserve = market.reserves[abbrev];
   const asset = Object.values(user.assets.tokens).find(asset => asset.tokenMintPubkey.equals(reserve.tokenMintPubkey));
 
   if (asset == null) {
-    return [false, undefined];
+    return [TxnResponse.Failed, null];
   }
 
   let ix: TransactionInstruction[] = [];
@@ -1141,7 +1153,7 @@ export const airdrop = async (abbrev: string, lamports: BN)
 
   //optionally create a token account for wallet
 
-  let ok: boolean = false, txid: string | undefined;
+  let ok: TxnResponse = TxnResponse.Failed, txid: string | null;
 
   if (!asset.walletTokenExists) {
     const createTokenAccountIx = Token.createAssociatedTokenAccountInstruction(
@@ -1164,14 +1176,14 @@ export const airdrop = async (abbrev: string, lamports: BN)
       const confirmation = await endpoint.confirmTransaction(txid);
       if (confirmation.value.err) {
         console.error(`Airdrop error: ${transactionErrorToString(confirmation.value.err.toString())}`);
-        return [false, txid];
+        return [TxnResponse.Failed, txid];
       } else {
-        return [true, txid];
+        return [TxnResponse.Success, txid];
       }
     } catch (error) {
       console.error(`Airdrop error: ${transactionErrorToString(error)}`);
       rollbar.error(`Airdrop error: ${transactionErrorToString(error)}`);
-      return [false, undefined]
+      return [TxnResponse.Failed, null]
     }
   } else if (reserve.faucetPubkey) {
     // Faucet airdrop
