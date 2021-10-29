@@ -24,17 +24,24 @@ use crate::Rounding;
 
 #[derive(Accounts)]
 #[instruction(bump: u8)]
-pub struct CloseDepositAccount<'info> {
-    /// The relevant market this deposit is for
+pub struct CloseCollateralAccount<'info> {
+    /// The relevant market this collateral is for
     #[account(has_one = market_authority)]
     pub market: Loader<'info, Market>,
-
+    
     /// The market's authority account
     pub market_authority: AccountInfo<'info>,
 
-    /// The reserve deposited into
+    /// The obligation the collateral account is used for ??
     #[account(mut,
               has_one = market,
+              has_one = owner,
+              has_one = collateral,
+              has_one = loans)]
+    pub obligation: Loader<'info, Obligation>,
+
+    /// The reserve that the collateral comes from
+    #[account(has_one = market,
               has_one = vault,
               has_one = deposit_note_mint)]
     pub reserve: Loader<'info, Reserve>,
@@ -43,44 +50,40 @@ pub struct CloseDepositAccount<'info> {
     #[account(mut)]
     pub vault: AccountInfo<'info>,
 
-    /// The mint for the deposit notes
-    #[account(mut)]
+    /// The mint for the deposit notes being used as collateral
     pub deposit_note_mint: AccountInfo<'info>,
 
-    /// The user/authority that owns the deposits
+    /// The user/authority that owns the collateral
     #[account(mut, signer)]
-    pub depositor: AccountInfo<'info>,
+    pub owner: AccountInfo<'info>,
 
-    /// The account that stores the deposit notes, to be closed
+    /// The account that will store the deposit notes
     #[account(mut,
               seeds = [
-                  b"deposits".as_ref(),
+                  b"collateral".as_ref(),
                   reserve.key().as_ref(),
-                  depositor.key.as_ref()
+                  obligation.key().as_ref(),
+                  owner.key.as_ref()
               ],
               bump = bump)]
-    pub deposit_account: AccountInfo<'info>,
-
-    /// The account to receive any remaining tokens still deposited
-    #[account(mut)]
-    pub receiver_account: AccountInfo<'info>,
+    pub collateral_account: AccountInfo<'info>,
 
     #[account(address = anchor_spl::token::ID)]
     pub token_program: AccountInfo<'info>,
 
     // TODO: needs debug
-    #[account(mut, close = depositor)]
+    #[account(mut, close = owner)]
     pub closing_account: ProgramAccount<'info, anchor_spl::token::ID>,
-
 }
 
-impl<'info> CloseDepositAccount<'info> {
+// TODO: Double Check: Close an account that can be used to store deposit notes as collateral for an obligation
+impl<'info> CloseCollateralAccount<'info> {
     fn transfer_context(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         CpiContext::new(
             self.token_program.clone(),
             Transfer {
                 from: self.vault.to_account_info(),
-                to: self.receiver_account.to_account_info(),
+                to: self.owner.to_account_info(),
                 authority: self.market_authority.clone(),
             },
         )
@@ -90,7 +93,7 @@ impl<'info> CloseDepositAccount<'info> {
         CpiContext::new(
             self.token_program.clone(),
             Burn {
-                to: self.deposit_account.to_account_info(),
+                to: self.collateral_account.to_account_info(),
                 mint: self.deposit_note_mint.to_account_info(),
                 authority: self.market_authority.clone(),
             },
@@ -101,8 +104,8 @@ impl<'info> CloseDepositAccount<'info> {
         CpiContext::new(
             self.token_program.clone(),
             CloseAccount {
-                account: self.deposit_account.to_account_info(),
-                destination: self.depositor.to_account_info(),
+                account: self.collateral_account.to_account_info(),
+                destination: self.owner.to_account_info(),
                 authority: self.market_authority.clone(),
             },
         )
@@ -110,24 +113,28 @@ impl<'info> CloseDepositAccount<'info> {
 }
 
 /// Close an account that stores deposit notes
-pub fn handler(ctx: Context<CloseDepositAccount>, _bump: u8) -> ProgramResult {
+pub fn handler(ctx: Context<CloseCollateralAccount>, _bump: u8) -> ProgramResult {
+    let obligation = ctx.accounts.obligation.load()?;
     let market = ctx.accounts.market.load()?;
 
     // Transfer any remaining notes back to the user before we can close
-    let notes_remaining = token::accessor::amount(&ctx.accounts.deposit_account)?;
+    let notes_remaining = token::accessor::amount(&ctx.accounts.collateral_account)?;
 
     if notes_remaining > 0 {
-        market.verify_ability_deposit_withdraw()?;
+        // TODO: verify if collateral is empty, then proceed 
+        // (need to write this function if doesn't exist)
+        verify_ability_collateral_withdraw()?;
 
         let mut reserve = ctx.accounts.reserve.load_mut()?;
         let clock = Clock::get()?;
-
+        // TODO: work this out to fit collateral account
         let reserve_info = market.reserves().get_cached(reserve.index, clock.slot);
         let tokens_to_withdraw =
             reserve_info.deposit_notes_to_tokens(notes_remaining, Rounding::Down);
 
         reserve.withdraw(tokens_to_withdraw, notes_remaining);
 
+        // TODO: Double check:
         token::transfer(
             ctx.accounts
                 .transfer_context()
@@ -135,6 +142,7 @@ pub fn handler(ctx: Context<CloseDepositAccount>, _bump: u8) -> ProgramResult {
             tokens_to_withdraw,
         )?;
 
+        // TODO: Double check:
         token::burn(
             ctx.accounts
                 .note_burn_context()
@@ -150,6 +158,7 @@ pub fn handler(ctx: Context<CloseDepositAccount>, _bump: u8) -> ProgramResult {
             .with_signer(&[&market.authority_seeds()]),
     )?;
 
-    msg!("closed deposit account");
+    msg!("closed collateral account");
     Ok(())
 }
+
