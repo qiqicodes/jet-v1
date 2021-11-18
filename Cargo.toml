@@ -2,7 +2,8 @@
 members = [
     "programs/*",
     "libraries/math",
-    "libraries/proc-macros"
+    "libraries/proc-macros",
+    "tools/cli"
 ]
 
 [profile.release]

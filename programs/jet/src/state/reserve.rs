@@ -442,7 +442,7 @@ impl Reserve {
 
 /// Information about a single collateral or loan account registered with an obligation
 #[assert_size(aligns, 496)]
-#[derive(Pod, Zeroable, Debug, Clone, Copy)]
+#[derive(Pod, Zeroable, Clone, Copy)]
 #[repr(C)]
 struct ReserveState {
     accrued_until: i64,
@@ -534,6 +534,35 @@ pub trait NoteCalculator {
         let tokens = notes * self.exchange_rate();
 
         tokens.as_u64(0)
+    }
+}
+
+impl std::fmt::Debug for ReserveState {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.debug_struct("ReserveState")
+            .field("accrued_until", &self.accrued_until)
+            .field("outstanding_debt", &self.outstanding_debt.to_string())
+            .field("uncollected_fees", &self.uncollected_fees.to_string())
+            .field("total_deposits", &self.total_deposits.to_string())
+            .field("total_deposit_notes", &self.total_deposit_notes.to_string())
+            .field("total_loan_notes", &self.total_loan_notes.to_string())
+            .finish()
+    }
+}
+
+impl std::fmt::Debug for Reserve {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let state = self.state().get_stale();
+
+        f.debug_struct("Reserve")
+            .field("index", &{ self.index })
+            .field("market", &self.market)
+            .field("token_mint", &self.token_mint)
+            .field("vault", &self.vault)
+            .field("fee_vault", &self.fee_note_vault)
+            .field("exponent", &{ self.exponent })
+            .field("state", state)
+            .finish()
     }
 }
 

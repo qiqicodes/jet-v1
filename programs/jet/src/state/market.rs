@@ -370,3 +370,34 @@ bitflags::bitflags! {
 
     }
 }
+
+impl std::fmt::Debug for ReserveInfo {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let cached = self.cache.get_stale();
+
+        f.debug_struct("Reserve")
+            .field("address", &self.reserve)
+            .field("price", &cached.price.to_string())
+            .field(
+                "deposit_note_exchange_rate",
+                &cached.deposit_note_exchange_rate.to_string(),
+            )
+            .field(
+                "loan_note_exchange_rate",
+                &cached.loan_note_exchange_rate.to_string(),
+            )
+            .finish()
+    }
+}
+
+impl std::fmt::Debug for Market {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.debug_struct("Market")
+            .field("quote_currency", &self.quote_currency())
+            .field("quote_mint", &self.quote_token_mint)
+            .field("market_authority", &self.market_authority)
+            .field("market_owner", &self.owner)
+            .field("reserves", &self.reserves().iter().collect::<Vec<_>>())
+            .finish()
+    }
+}
