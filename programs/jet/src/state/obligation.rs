@@ -35,6 +35,11 @@ use super::MarketReserves;
 /// Limit the total positions that can be registered on an obligation
 const MAX_OBLIGATION_POSITIONS: usize = 11;
 
+/// The minimum quote value for an obligation to require partial liquidations,
+/// if an obligation has a lower value then it can be fully liquidated when below
+/// the minimum collateralization ratio.
+const MIN_PARTIAL_LIQUIDATION_VALUE: u64 = 10;
+
 #[assert_size(4608)]
 /// Tracks information about a user's obligation to repay a borrowed position.
 #[account(zero_copy)]
@@ -214,6 +219,13 @@ impl Obligation {
         let collateral_sellable_value = std::cmp::min(
             (Number::ONE + liquidation_bonus) * repaid_value,
             limit_fraction * collateral_total,
+        );
+
+        // Set a minimum sellable amount, so that positions worth less than the minimum
+        // can always be fully liquidated.
+        let collateral_sellable_value = std::cmp::max(
+            collateral_sellable_value,
+            Number::from(MIN_PARTIAL_LIQUIDATION_VALUE),
         );
 
         // Limit collateral to allow for withdrawl by a liquidator, based on the
@@ -820,6 +832,39 @@ mod tests {
             .unwrap();
 
         assert_eq!(505, collateral_returned.as_u64_rounded(0));
+    }
+
+    #[test]
+    fn no_partial_liquidate_at_min() {
+        let mut ctx = ObligationTestContext::new();
+
+        let collateral = ctx.create_collateral(|reserve| {
+            let cache = reserve.get_stale_mut();
+
+            cache.liquidation_bonus = 1000;
+            cache.price = Number::from(1);
+            cache.deposit_note_exchange_rate = Number::from(1);
+            cache.min_collateral_ratio = Number::from_bps(12500);
+        });
+        let loan = ctx.create_loan(|reserve| {
+            let cache = reserve.get_stale_mut();
+
+            cache.price = Number::from(2);
+            cache.loan_note_exchange_rate = Number::from(1);
+            cache.min_collateral_ratio = Number::from_bps(12500);
+        });
+
+        ctx.obligation
+            .deposit_collateral(&collateral, Number::from(9))
+            .unwrap();
+        ctx.obligation.borrow(&loan, Number::from(4)).unwrap();
+
+        let collateral_returned = ctx
+            .obligation
+            .liquidate(&ctx.market, 0, &collateral, &loan, Number::from(4))
+            .unwrap();
+
+        assert_eq!(9, collateral_returned.as_u64_rounded(0));
     }
 
     #[test]
