@@ -23,6 +23,9 @@ import {
 import BN from "bn.js";
 import { u64 } from "@solana/spl-token";
 import * as util from "util";
+import { initTransactionLogs } from "app/src/scripts/jet";
+import { expect } from "chai";
+
 
 const TEST_CURRENCY = "LTD";
 
@@ -244,6 +247,7 @@ describe("jet-serum", () => {
         loanOriginationFee: 10,
         liquidationSlippage: 300,
         liquidationDexTradeMax: new BN(1000 * LAMPORTS_PER_SOL),
+        confidenceThreshold: 500,
       },
     });
 
@@ -268,6 +272,7 @@ describe("jet-serum", () => {
         loanOriginationFee: 10,
         liquidationSlippage: 300,
         liquidationDexTradeMax: new BN(1000 * LAMPORTS_PER_SOL),
+        confidenceThreshold: 1000,
       },
     });
 
@@ -292,6 +297,7 @@ describe("jet-serum", () => {
         loanOriginationFee: 10,
         liquidationSlippage: 300,
         liquidationDexTradeMax: new BN(1000 * LAMPORTS_PER_SOL),
+        confidenceThreshold: 1000,
       },
     });
 
@@ -316,6 +322,7 @@ describe("jet-serum", () => {
         loanOriginationFee: 10,
         liquidationSlippage: 300,
         liquidationDexTradeMax: new BN(1000 * LAMPORTS_PER_SOL),
+        confidenceThreshold: 1500,
       },
     });
 
@@ -457,6 +464,7 @@ describe("jet-serum", () => {
             loanOriginationFee: 10,
             liquidationSlippage: 300,
             liquidationDexTradeMax: new BN(1000 * LAMPORTS_PER_SOL),
+            confidenceThreshold: 1500,
           },
         });
       })
@@ -544,5 +552,25 @@ describe("jet-serum", () => {
         assets.map((asset) => asset.reserve.refresh()),
       ].flat()
     );
+  });
+
+  it("dex will not liquidate when confidence out of range", async () => {
+    await utils.pyth.updatePriceAccount(usdc.pythPrice, {
+      exponent: -9,
+      aggregatePriceInfo: {
+        price: 1000000000n,
+        conf: 60000000n, // 600 bps or 6% of the price of USDC
+      },
+      twap: {
+        valueComponent: 1000000000n,
+      },
+    });
+
+    await expect(
+      users[0].client.liquidateDex(
+        wsol.reserve,
+        usdc.reserve
+      )
+    ).to.be.rejectedWith("0x131");
   });
 });

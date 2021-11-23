@@ -98,8 +98,9 @@ pub struct ReserveConfig {
     /// assets from this reserve as collateral.
     pub liquidation_slippage: u16,
 
-    /// unused
-    pub _reserved0: u16,
+    /// Represented as a percentage of the Price
+    /// confidence values above this will not be accepted
+    pub confidence_threshold: u16,
 
     /// The maximum token amount to allow in a single DEX trade when
     /// liquidating assetr from this reserve as collateral.
