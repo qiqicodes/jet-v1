@@ -94,6 +94,17 @@ impl Obligation {
             .register(Position::new(Side::Loan, *account, reserve_index))
     }
 
+    pub fn unregister_collateral(
+        &mut self,
+        account: &Pubkey,
+        // position: &Position
+    ) -> Result<(), ErrorCode> {
+        self.collateral_mut().unregister(*account)
+    }
+
+    pub fn unregister_loan(&mut self, account: &Pubkey) -> Result<(), ErrorCode> {
+        self.loans_mut().unregister(*account)
+    }
     /// Record the collateral deposited for an obligation
     pub fn deposit_collateral(
         &mut self,
@@ -295,7 +306,7 @@ impl Obligation {
         self.loans()._market_value(market, current_slot)
     }
 
-    fn position_count(&self) -> usize {
+    pub fn position_count(&self) -> usize {
         let collaterals = self
             .collateral()
             .positions
@@ -389,12 +400,28 @@ impl ObligationSide {
             if position.account != Pubkey::default() {
                 continue;
             }
+
             *position = new;
 
             return Ok(());
         }
 
         Err(ErrorCode::NoFreeObligation)
+    }
+
+    /// Unregister a position for this obligation (account which holds loan or collateral notes)
+    fn unregister(&mut self, existing_account: Pubkey) -> Result<(), ErrorCode> {
+        for position in self.positions.iter_mut() {
+            if position.account != existing_account {
+                continue;
+            }
+
+            *position.account = Pubkey::default();
+
+            return Ok(());
+        }
+
+        Err(ErrorCode::ObligationPositionNotFound)
     }
 
     /// Record the loan borrowed from an obligation (borrow notes deposited)

@@ -145,6 +145,6 @@ pub fn handler(ctx: Context<CloseDepositAccount>, _bump: u8) -> ProgramResult {
             .with_signer(&[&market.authority_seeds()]),
     )?;
 
-    msg!("initialized deposit account");
+    msg!("closed deposit account");
     Ok(())
 }

@@ -90,6 +90,15 @@ pub enum ErrorCode {
 
     #[msg("a given parameter is not valid")]
     InvalidParameter,
+
+    #[msg("the obligation account still holds position in the loan or collateral account")]
+    PositionNotEmpty,
+
+    #[msg("position not found in an obligation")]
+    ObligationPositionNotFound,
+
+    #[msg("the collateral/loan account is not empty")]
+    AccountNotEmptyError,
 }
 
 impl From<jet_math::Error> for ErrorCode {
