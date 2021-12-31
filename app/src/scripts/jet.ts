@@ -14,6 +14,7 @@ import { Amount, timeout, TokenAmount } from './util';
 import { dictionary } from './localization';
 import { Buffer } from 'buffer';
 import bs58 from 'bs58';
+import { generateCopilotSuggestion } from './copilot';
 
 const SECONDS_PER_HOUR: BN = new BN(3600);
 const SECONDS_PER_DAY: BN = SECONDS_PER_HOUR.muln(24);
@@ -128,6 +129,7 @@ export const getIDLAndAnchorAndMarketPubkeys = async (): Promise<void> => {
         _reserved0: 0,
         liquidationDexTradeMax: 0,
         _reserved1: [],
+        confidenceThreshold: 0
       },
 
       accountPubkey: reserveMeta.accounts.reserve,
@@ -217,7 +219,11 @@ export const getWalletAndAnchor = async (provider: WalletProvider): Promise<void
     USER.update(user => {
       user.walletInit = true;
       return user;
-    })
+    });
+    //if user's col ratio is too low, warn the user
+    if (user.position.borrowedValue && user.position.colRatio <= market.minColRatio) {
+      generateCopilotSuggestion();
+    }
   });
   // Initiate wallet connection
   try {

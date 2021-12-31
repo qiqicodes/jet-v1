@@ -2,14 +2,12 @@
   <title>Jet Protocol | {dictionary[$USER.language].cockpit.title}</title>
 </svelte:head>
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { NATIVE_MINT } from '@solana/spl-token'; 
   import type { Reserve } from '../models/JetTypes';
   import { TxnResponse } from '../models/JetTypes';
   import { INIT_FAILED, MARKET, USER } from '../store';
   import { inDevelopment, airdrop } from '../scripts/jet';
   import { currencyFormatter, totalAbbrev, TokenAmount } from '../scripts/util';;
-  import { generateCopilotSuggestion } from '../scripts/copilot';
   import { dictionary } from '../scripts/localization'; 
   import Loader from '../components/Loader.svelte';
   import ReserveDetail from '../components/ReserveDetail.svelte';
@@ -46,18 +44,20 @@
       amount = TokenAmount.tokens("1", reserve.decimals);
     }
 
-    const [res, txid] = await airdrop(reserve.abbrev, amount.amount);
+    const [res, txids] = await airdrop(reserve.abbrev, amount.amount);
     if (res === TxnResponse.Success) {
       $USER.addNotification({
         success: true,
         text: dictionary[$USER.language].copilot.alert.airdropSuccess
           .replaceAll('{{UI AMOUNT}}', amount.uiAmount)
-          .replaceAll('{{RESERVE ABBREV}}', reserve.abbrev)
+          .replaceAll('{{RESERVE ABBREV}}', reserve.abbrev),
+        txids
       });
     } else if (res === TxnResponse.Failed) {
       $USER.addNotification({
         success: false,
-        text: dictionary[$USER.language].cockpit.txFailed
+        text: dictionary[$USER.language].cockpit.txFailed,
+        txids
       });
     }
   };
@@ -67,13 +67,6 @@
     filteredReserves = $MARKET.reservesArray;
   }
 
-  // Init Cockpit
-  onMount(() => {
-    // If user is subject to liquidation, warn them
-    if ($USER.position.borrowedValue && $USER.position.colRatio <= $MARKET.minColRatio) {
-      generateCopilotSuggestion();
-    }
-  });
 </script>
 
 {#if $INIT_FAILED || $USER.geobanned}
